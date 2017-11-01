@@ -66,7 +66,13 @@ func eventLoop(s tcell.Screen) {
 				return
 			case tcell.KeyCtrlO:
 				if curX == 40 {
-					openURL(feeds[feedIdx].Items[curY].Link)
+					feed := feeds[feedIdx]
+					item := feed.Items[curY]
+					openURL(item.Title)
+					if !item.Read {
+						item.Read = true
+						feed.Unread--
+					}
 				}
 			case tcell.KeyDown:
 				if curX == 40 {
