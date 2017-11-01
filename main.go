@@ -86,6 +86,13 @@ func showFeeds(s tcell.Screen) {
 	s.Show()
 }
 
+func showItems(s tcell.Screen, f *rss.Feed) {
+	for n, i := range f.Items {
+		printStr(s, 40, n, i.Title)
+	}
+	s.Show()
+}
+
 func printLayout(s tcell.Screen) {
 	_, h := s.Size()
 	printLine(s, 30, 0, 1, h+10)
@@ -97,6 +104,7 @@ func main() {
 	s.ShowCursor(0, 0)
 	appendFeed("http://mumei.space:8020")
 	appendFeed("https://news.ycombinator.com/rss")
+	showItems(s, feeds[0])
 	printLayout(s)
 	eventLoop(s)
 	deinitScreen(s)
