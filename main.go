@@ -4,11 +4,13 @@ import (
 	"github.com/SlyMarbo/rss"
 	"github.com/gdamore/tcell"
 	"github.com/mattn/go-runewidth"
+	"os/exec"
 	"strconv"
 )
 
 var feeds []*rss.Feed
 var curX, curY int
+var feedIdx int
 
 func check(err error) {
 	if err != nil {
@@ -48,6 +50,12 @@ func printLine(s tcell.Screen, x, y int, sx, sy int) {
 	printRectangle(s, x, y, sx, sy, '│')
 }
 
+func openURL(url string) {
+	cmd := exec.Command("firefox", url)
+	err := cmd.Start()
+	check(err)
+}
+
 func eventLoop(s tcell.Screen) {
 	for {
 		ev := s.PollEvent()
@@ -56,8 +64,15 @@ func eventLoop(s tcell.Screen) {
 			switch ev.Key() {
 			case tcell.KeyEscape, tcell.KeyCtrlC, tcell.KeyCtrlQ:
 				return
+			case tcell.KeyCtrlO:
+				if curX == 40 {
+					openURL(feeds[feedIdx].Items[curY].Link)
+				}
 			case tcell.KeyDown:
-				if curY < len(feeds)-1 {
+				if curX == 40 {
+					curY++
+					s.ShowCursor(curX, curY)
+				} else if curY < len(feeds)-1 {
 					curY++
 					s.ShowCursor(curX, curY)
 				}
@@ -66,13 +81,22 @@ func eventLoop(s tcell.Screen) {
 					curY--
 					s.ShowCursor(curX, curY)
 				}
+			case tcell.KeyRight:
+				curX = 40
+				feedIdx = curY
+				s.ShowCursor(curX, curY)
+			case tcell.KeyLeft:
+				curX = 0
+				curY = feedIdx
+				s.ShowCursor(curX, curY)
 			}
-		case *tcell.EventResize:
-			printLayout(s)
+			//		case *tcell.EventResize:
+			//			printLayout(s)
 		}
-		if curY < len(feeds) {
+		if curX == 0 && curY < len(feeds) {
 			showItems(s, feeds[curY])
 		}
+		printLayout(s)
 	}
 }
 
