@@ -53,13 +53,15 @@ func eventLoop(s tcell.Screen) {
 		ev := s.PollEvent()
 		switch ev := ev.(type) {
 		case *tcell.EventKey:
-			if ev.Key() == tcell.KeyEscape ||
-				ev.Key() == tcell.KeyCtrlC {
+			switch ev.Key() {
+			case tcell.KeyEscape, tcell.KeyCtrlC, tcell.KeyCtrlQ:
 				return
-			} else if ev.Key() == tcell.KeyDown {
-				curY++
-				s.ShowCursor(curX, curY)
-			} else if ev.Key() == tcell.KeyUp {
+			case tcell.KeyDown:
+				if curY < len(feeds)-1 {
+					curY++
+					s.ShowCursor(curX, curY)
+				}
+			case tcell.KeyUp:
 				if curY > 0 {
 					curY--
 					s.ShowCursor(curX, curY)
@@ -113,12 +115,21 @@ func printLayout(s tcell.Screen) {
 	showFeeds(s)
 }
 
+func loadFeed(s tcell.Screen, url string) {
+	appendFeed(url)
+	printLayout(s)
+}
+
+func loadFeeds(s tcell.Screen) {
+	go loadFeed(s, "https://news.ycombinator.com/rss")
+	go loadFeed(s, "http://mumei.space:8020")
+}
+
 func main() {
 	s := initScreen()
 	s.ShowCursor(curX, curY)
-	appendFeed("http://mumei.space:8020")
-	appendFeed("https://news.ycombinator.com/rss")
 	printLayout(s)
+	loadFeeds(s)
 	eventLoop(s)
 	deinitScreen(s)
 }
