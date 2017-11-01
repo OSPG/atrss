@@ -8,6 +8,7 @@ import (
 )
 
 var feeds []*rss.Feed
+var curX, curY int
 
 func check(err error) {
 	if err != nil {
@@ -55,9 +56,20 @@ func eventLoop(s tcell.Screen) {
 			if ev.Key() == tcell.KeyEscape ||
 				ev.Key() == tcell.KeyCtrlC {
 				return
+			} else if ev.Key() == tcell.KeyDown {
+				curY++
+				s.ShowCursor(curX, curY)
+			} else if ev.Key() == tcell.KeyUp {
+				if curY > 0 {
+					curY--
+					s.ShowCursor(curX, curY)
+				}
 			}
 		case *tcell.EventResize:
 			printLayout(s)
+		}
+		if curY < len(feeds) {
+			showItems(s, feeds[curY])
 		}
 	}
 }
@@ -87,6 +99,8 @@ func showFeeds(s tcell.Screen) {
 }
 
 func showItems(s tcell.Screen, f *rss.Feed) {
+	s.Clear()
+	printLayout(s)
 	for n, i := range f.Items {
 		printStr(s, 40, n, i.Title)
 	}
@@ -101,10 +115,9 @@ func printLayout(s tcell.Screen) {
 
 func main() {
 	s := initScreen()
-	s.ShowCursor(0, 0)
+	s.ShowCursor(curX, curY)
 	appendFeed("http://mumei.space:8020")
 	appendFeed("https://news.ycombinator.com/rss")
-	showItems(s, feeds[0])
 	printLayout(s)
 	eventLoop(s)
 	deinitScreen(s)
