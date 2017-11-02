@@ -3,14 +3,28 @@ package main
 import (
 	"github.com/SlyMarbo/rss"
 	"github.com/gdamore/tcell"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/mattn/go-runewidth"
 	"os/exec"
 	"strconv"
+	"time"
 )
 
 var feeds []*rss.Feed
 var curX, curY int
 var feedIdx int
+
+type Feed struct {
+	Nickname    string // This is not set by the package, but could be helpful.
+	Title       string
+	Description string
+	Link        string // Link to the creator's website.
+	UpdateURL   string `gorm:"primary_key"` // URL of the feed itself.
+	Items       []*rss.Item
+	Refresh     time.Time // Earliest time this feed should next be checked.
+	Unread      uint32    // Number of unread items. Used by aggregators.
+}
 
 func check(err error) {
 	if err != nil {
@@ -145,21 +159,49 @@ func printLayout(s tcell.Screen) {
 	showFeeds(s)
 }
 
-func loadFeed(s tcell.Screen, url string) {
+func loadFeed(s tcell.Screen, db *gorm.DB, url string) {
 	appendFeed(url)
+	var feed Feed
+	db.First(&feed, "update_url = ?", url)
+	if feed.UpdateURL != url {
+		f := copyFeed(feeds[len(feeds)-1])
+		db.Create(&f)
+	}
 	printLayout(s)
 }
 
-func loadFeeds(s tcell.Screen) {
-	go loadFeed(s, "https://news.ycombinator.com/rss")
-	go loadFeed(s, "http://mumei.space:8020")
+func loadFeeds(s tcell.Screen, db *gorm.DB) {
+	go loadFeed(s, db, "https://news.ycombinator.com/rss")
+	go loadFeed(s, db, "http://mumei.space:8020")
+}
+
+func openDB() *gorm.DB {
+	db, err := gorm.Open("sqlite3", "test.db")
+	check(err)
+	return db
+}
+
+func copyFeed(srcFeed *rss.Feed) Feed {
+	var dstFeed Feed
+	dstFeed.Title = srcFeed.Title
+	dstFeed.Description = srcFeed.Description
+	dstFeed.Link = srcFeed.Link
+	dstFeed.Nickname = srcFeed.Nickname
+	dstFeed.Refresh = srcFeed.Refresh
+	dstFeed.Unread = srcFeed.Unread
+	dstFeed.UpdateURL = srcFeed.UpdateURL
+	dstFeed.Items = srcFeed.Items
+	return dstFeed
 }
 
 func main() {
+	db := openDB()
+	db.AutoMigrate(&Feed{})
 	s := initScreen()
 	s.ShowCursor(curX, curY)
 	printLayout(s)
-	loadFeeds(s)
+	loadFeeds(s, db)
 	eventLoop(s)
+	db.Close()
 	deinitScreen(s)
 }
