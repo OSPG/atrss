@@ -6,14 +6,24 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/mattn/go-runewidth"
 	scribble "github.com/nanobox-io/golang-scribble"
+	"gopkg.in/yaml.v2"
 
+	"io/ioutil"
 	"os/exec"
+	"os/user"
 	"strconv"
+	"strings"
 )
+
+const CONFIG_DIR = "~/.config/atrss/"
 
 var feeds []*rss.Feed
 var curX, curY int
 var feedIdx int
+
+type ConfStruct struct {
+	Feeds []string `yaml:"feeds"`
+}
 
 func check(err error) {
 	if err != nil {
@@ -173,23 +183,43 @@ func saveFeeds(db *scribble.Driver) {
 	}
 }
 
-func loadFeeds(s tcell.Screen, db *scribble.Driver) {
-	go loadFeed(s, db, "https://news.ycombinator.com/rss")
-	go loadFeed(s, db, "http://mumei.space:8020")
+func Expand(path string) string {
+	usr, err := user.Current()
+	check(err)
+
+	return strings.Replace(path, "~", usr.HomeDir, 1)
+}
+
+func loadFeeds(s tcell.Screen, db *scribble.Driver, cfg ConfStruct) {
+	for _, feed := range cfg.Feeds {
+		go loadFeed(s, db, feed)
+	}
 }
 
 func openDB() *scribble.Driver {
-	db, err := scribble.New("./", nil)
+	db, err := scribble.New(Expand(CONFIG_DIR), nil)
 	check(err)
 	return db
 }
 
+func loadConfig() ConfStruct {
+	cfgFile := Expand(CONFIG_DIR) + "atrss.yml"
+	data, err := ioutil.ReadFile(cfgFile)
+	check(err)
+
+	var conf ConfStruct
+	err = yaml.Unmarshal([]byte(data), &conf)
+	check(err)
+	return conf
+}
+
 func main() {
+	cfg := loadConfig()
 	db := openDB()
 	s := initScreen()
 	s.ShowCursor(curX, curY)
 	printLayout(s)
-	loadFeeds(s, db)
+	loadFeeds(s, db, cfg)
 	eventLoop(s)
 	saveFeeds(db)
 	deinitScreen(s)
