@@ -165,6 +165,14 @@ func loadFeed(s tcell.Screen, db *scribble.Driver, url string) {
 	printLayout(s)
 }
 
+func saveFeeds(db *scribble.Driver) {
+	for _, f := range feeds {
+		encoded_url := b64.StdEncoding.EncodeToString([]byte(f.UpdateURL))
+		err := db.Write("feed", encoded_url, f)
+		check(err)
+	}
+}
+
 func loadFeeds(s tcell.Screen, db *scribble.Driver) {
 	go loadFeed(s, db, "https://news.ycombinator.com/rss")
 	go loadFeed(s, db, "http://mumei.space:8020")
@@ -183,5 +191,6 @@ func main() {
 	printLayout(s)
 	loadFeeds(s, db)
 	eventLoop(s)
+	saveFeeds(db)
 	deinitScreen(s)
 }
