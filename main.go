@@ -42,7 +42,7 @@ func eventLoop(s tcell.Screen) {
 				if curX == 40 {
 					feed := feeds[feedIdx]
 					item := feed.Items[curY]
-					OpenURL(item.Title)
+					OpenURL(item.Link)
 					if !item.Read {
 						item.Read = true
 						feed.Unread--
