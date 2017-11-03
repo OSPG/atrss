@@ -1,30 +1,19 @@
 package main
 
 import (
+	b64 "encoding/base64"
 	"github.com/SlyMarbo/rss"
 	"github.com/gdamore/tcell"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/sqlite"
 	"github.com/mattn/go-runewidth"
+	scribble "github.com/nanobox-io/golang-scribble"
+
 	"os/exec"
 	"strconv"
-	"time"
 )
 
 var feeds []*rss.Feed
 var curX, curY int
 var feedIdx int
-
-type Feed struct {
-	Nickname    string // This is not set by the package, but could be helpful.
-	Title       string
-	Description string
-	Link        string // Link to the creator's website.
-	UpdateURL   string `gorm:"primary_key"` // URL of the feed itself.
-	Items       []*rss.Item
-	Refresh     time.Time // Earliest time this feed should next be checked.
-	Unread      uint32    // Number of unread items. Used by aggregators.
-}
 
 func check(err error) {
 	if err != nil {
@@ -159,49 +148,40 @@ func printLayout(s tcell.Screen) {
 	showFeeds(s)
 }
 
-func loadFeed(s tcell.Screen, db *gorm.DB, url string) {
+func loadFeed(s tcell.Screen, db *scribble.Driver, url string) {
 	appendFeed(url)
-	var feed Feed
-	db.First(&feed, "update_url = ?", url)
-	if feed.UpdateURL != url {
-		f := copyFeed(feeds[len(feeds)-1])
-		db.Create(&f)
+	feed := feeds[len(feeds)-1]
+	f := rss.Feed{}
+	encoded_url := b64.StdEncoding.EncodeToString([]byte(url))
+	err := db.Read("feed", encoded_url, &f)
+
+	if err == nil {
+		err := db.Read("feed", encoded_url, &feed)
+		check(err)
+	} else {
+		err := db.Write("feed", encoded_url, feed)
+		check(err)
 	}
 	printLayout(s)
 }
 
-func loadFeeds(s tcell.Screen, db *gorm.DB) {
+func loadFeeds(s tcell.Screen, db *scribble.Driver) {
 	go loadFeed(s, db, "https://news.ycombinator.com/rss")
 	go loadFeed(s, db, "http://mumei.space:8020")
 }
 
-func openDB() *gorm.DB {
-	db, err := gorm.Open("sqlite3", "test.db")
+func openDB() *scribble.Driver {
+	db, err := scribble.New("./", nil)
 	check(err)
 	return db
 }
 
-func copyFeed(srcFeed *rss.Feed) Feed {
-	var dstFeed Feed
-	dstFeed.Title = srcFeed.Title
-	dstFeed.Description = srcFeed.Description
-	dstFeed.Link = srcFeed.Link
-	dstFeed.Nickname = srcFeed.Nickname
-	dstFeed.Refresh = srcFeed.Refresh
-	dstFeed.Unread = srcFeed.Unread
-	dstFeed.UpdateURL = srcFeed.UpdateURL
-	dstFeed.Items = srcFeed.Items
-	return dstFeed
-}
-
 func main() {
 	db := openDB()
-	db.AutoMigrate(&Feed{})
 	s := initScreen()
 	s.ShowCursor(curX, curY)
 	printLayout(s)
 	loadFeeds(s, db)
 	eventLoop(s)
-	db.Close()
 	deinitScreen(s)
 }
