@@ -109,6 +109,16 @@ func eventLoop(s tcell.Screen) {
 				curY = feedIdx
 				s.ShowCursor(curX, curY)
 			}
+			switch ev.Rune() {
+			case ' ':
+				feed := feeds[feedIdx]
+				item := feed.Items[curY]
+				if !item.Read {
+					item.Read = true
+					feed.Unread--
+				}
+
+			}
 			//		case *tcell.EventResize:
 			//			printLayout(s)
 		}
