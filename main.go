@@ -19,9 +19,14 @@ type ConfStruct struct {
 	Feeds []string `yaml:"feeds"`
 }
 
-func appendFeed(url string) {
+func fetchFeed(url string) *rss.Feed {
 	feed, err := rss.Fetch(url)
 	check(err)
+	return feed
+}
+
+func appendFeed(url string) {
+	feed := fetchFeed(url)
 	feeds = append(feeds, feed)
 }
 
@@ -64,6 +69,10 @@ func eventLoop(s tcell.Screen) {
 				curX = 0
 				curY = feedIdx
 				s.ShowCursor(curX, curY)
+			case tcell.KeyCtrlR:
+				for _, feed := range feeds {
+					feed.Update()
+				}
 			}
 			switch ev.Rune() {
 			case ' ':
@@ -84,11 +93,10 @@ func eventLoop(s tcell.Screen) {
 
 func loadFeeds(s tcell.Screen, db *scribble.Driver, cfg ConfStruct) {
 	for _, url := range cfg.Feeds {
-		dst := feeds[len(feeds)-1]
-		go func(dst *rss.Feed) {
-			loadFeed(db, url, dst)
+		go func(url string) {
+			loadFeed(db, url)
 			printLayout(s)
-		}(dst)
+		}(url)
 	}
 }
 

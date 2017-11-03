@@ -54,24 +54,23 @@ func showFeeds(s tcell.Screen) {
 		str := "(" + unread + ") " + f.Title
 		printStr(s, 0, n, str)
 	}
-
-	s.Show()
 }
 
 func showItems(s tcell.Screen, f *rss.Feed) {
-	s.Clear()
-	printLayout(s)
 	for n, i := range f.Items {
 		printStr(s, 40, n, i.Title)
 	}
-	s.Show()
 }
 
 func printLayout(s tcell.Screen) {
+	s.Clear()
 	_, h := s.Size()
 	printLine(s, 30, 0, 1, h+10)
 	showFeeds(s)
 	if curX == 0 && curY < len(feeds) {
 		showItems(s, feeds[curY])
+	} else if curX == 40 {
+		showItems(s, feeds[feedIdx])
 	}
+	s.Show()
 }

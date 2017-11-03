@@ -12,16 +12,25 @@ func openDB(dir string) *scribble.Driver {
 	return db
 }
 
-func loadFeed(db *scribble.Driver, url string, feed *rss.Feed) {
-	appendFeed(url)
+func loadFeed(db *scribble.Driver, url string) {
 	f := rss.Feed{}
 	encoded_url := b64.StdEncoding.EncodeToString([]byte(url))
 	err := db.Read("feed", encoded_url, &f)
 
 	if err == nil {
-		err := db.Read("feed", encoded_url, &feed)
-		check(err)
+		updatedFeed := fetchFeed(url)
+		for _, item := range updatedFeed.Items {
+			if _, ok := f.ItemMap[item.ID]; !ok {
+				f.ItemMap[item.ID] = struct{}{}
+				f.Items = append(f.Items, item)
+			}
+		}
+
+		f.Unread = uint32(len(f.Items))
+		feeds = append(feeds, &f)
 	} else {
+		appendFeed(url)
+		feed := feeds[len(feeds)-1]
 		err := db.Write("feed", encoded_url, feed)
 		check(err)
 	}
