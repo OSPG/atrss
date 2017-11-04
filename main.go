@@ -6,14 +6,13 @@ import (
 	scribble "github.com/nanobox-io/golang-scribble"
 	"gopkg.in/yaml.v2"
 
+	"./ui"
 	"io/ioutil"
 )
 
 const CONFIG_DIR = "~/.config/atrss/"
 
 var feeds []*rss.Feed
-var curX, curY int
-var feedIdx int
 
 type ConfStruct struct {
 	Feeds []string `yaml:"feeds"`
@@ -39,9 +38,9 @@ func eventLoop(s tcell.Screen) {
 			case tcell.KeyEscape, tcell.KeyCtrlC, tcell.KeyCtrlQ:
 				return
 			case tcell.KeyCtrlO:
-				if curX == 40 {
-					feed := feeds[feedIdx]
-					item := feed.Items[curY]
+				if ui.CurX == 40 {
+					feed := feeds[ui.FeedIdx]
+					item := feed.Items[ui.CurY]
 					OpenURL(item.Link)
 					if !item.Read {
 						item.Read = true
@@ -49,26 +48,26 @@ func eventLoop(s tcell.Screen) {
 					}
 				}
 			case tcell.KeyDown:
-				if curX == 40 && curY < len(feeds[feedIdx].Items)-1 {
-					curY++
-					s.ShowCursor(curX, curY)
-				} else if curY < len(feeds)-1 {
-					curY++
-					s.ShowCursor(curX, curY)
+				if ui.CurX == 40 && ui.CurY < len(feeds[ui.FeedIdx].Items)-1 {
+					ui.CurY++
+					s.ShowCursor(ui.CurX, ui.CurY)
+				} else if ui.CurY < len(feeds)-1 {
+					ui.CurY++
+					s.ShowCursor(ui.CurX, ui.CurY)
 				}
 			case tcell.KeyUp:
-				if curY > 0 {
-					curY--
-					s.ShowCursor(curX, curY)
+				if ui.CurY > 0 {
+					ui.CurY--
+					s.ShowCursor(ui.CurX, ui.CurY)
 				}
 			case tcell.KeyRight:
-				curX = 40
-				feedIdx = curY
-				s.ShowCursor(curX, curY)
+				ui.CurX = 40
+				ui.FeedIdx = ui.CurY
+				s.ShowCursor(ui.CurX, ui.CurY)
 			case tcell.KeyLeft:
-				curX = 0
-				curY = feedIdx
-				s.ShowCursor(curX, curY)
+				ui.CurX = 0
+				ui.CurY = ui.FeedIdx
+				s.ShowCursor(ui.CurX, ui.CurY)
 			case tcell.KeyCtrlR:
 				for _, feed := range feeds {
 					feed.Update()
@@ -76,8 +75,8 @@ func eventLoop(s tcell.Screen) {
 			}
 			switch ev.Rune() {
 			case ' ':
-				feed := feeds[feedIdx]
-				item := feed.Items[curY]
+				feed := feeds[ui.FeedIdx]
+				item := feed.Items[ui.CurY]
 				if !item.Read {
 					item.Read = true
 					feed.Unread--
@@ -87,7 +86,7 @@ func eventLoop(s tcell.Screen) {
 			//		case *tcell.EventResize:
 			//			printLayout(s)
 		}
-		printLayout(s)
+		ui.PrintLayout(s, feeds)
 	}
 }
 
@@ -95,7 +94,7 @@ func loadFeeds(s tcell.Screen, db *scribble.Driver, cfg ConfStruct) {
 	for _, url := range cfg.Feeds {
 		go func(url string) {
 			loadFeed(db, url)
-			printLayout(s)
+			ui.PrintLayout(s, feeds)
 		}(url)
 	}
 }
@@ -114,11 +113,12 @@ func loadConfig() ConfStruct {
 func main() {
 	cfg := loadConfig()
 	db := openDB(CONFIG_DIR)
-	s := initScreen()
-	s.ShowCursor(curX, curY)
-	printLayout(s)
+	s := ui.InitScreen()
+	defer ui.DeinitScreen(s)
+
+	s.ShowCursor(ui.CurX, ui.CurY)
+	ui.PrintLayout(s, feeds)
 	loadFeeds(s, db, cfg)
 	eventLoop(s)
 	saveFeeds(db)
-	deinitScreen(s)
 }

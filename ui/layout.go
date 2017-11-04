@@ -1,4 +1,4 @@
-package main
+package ui
 
 import (
 	"github.com/SlyMarbo/rss"
@@ -8,7 +8,16 @@ import (
 	"strconv"
 )
 
-func initScreen() tcell.Screen {
+var CurX, CurY int
+var FeedIdx int
+
+func check(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
+func InitScreen() tcell.Screen {
 	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
 	s, err := tcell.NewScreen()
 	check(err)
@@ -17,7 +26,7 @@ func initScreen() tcell.Screen {
 	return s
 }
 
-func deinitScreen(s tcell.Screen) {
+func DeinitScreen(s tcell.Screen) {
 	s.Clear()
 	s.Fini()
 }
@@ -48,7 +57,7 @@ func printStr(s tcell.Screen, x, y int, str string) {
 	}
 }
 
-func showFeeds(s tcell.Screen) {
+func showFeeds(s tcell.Screen, feeds []*rss.Feed) {
 	for n, f := range feeds {
 		unread := strconv.FormatUint(uint64(f.Unread), 10)
 		str := "(" + unread + ") " + f.Title
@@ -62,15 +71,15 @@ func showItems(s tcell.Screen, f *rss.Feed) {
 	}
 }
 
-func printLayout(s tcell.Screen) {
+func PrintLayout(s tcell.Screen, feeds []*rss.Feed) {
 	s.Clear()
 	_, h := s.Size()
 	printLine(s, 30, 0, 1, h+10)
-	showFeeds(s)
-	if curX == 0 && curY < len(feeds) {
-		showItems(s, feeds[curY])
-	} else if curX == 40 {
-		showItems(s, feeds[feedIdx])
+	showFeeds(s, feeds)
+	if CurX == 0 && CurY < len(feeds) {
+		showItems(s, feeds[CurY])
+	} else if CurX == 40 {
+		showItems(s, feeds[FeedIdx])
 	}
 	s.Show()
 }
