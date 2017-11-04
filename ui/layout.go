@@ -112,7 +112,13 @@ func (s *Screen) printStr(x, y int, str string) {
 func (s *Screen) showFeeds(feeds []*rss.Feed) {
 	for n, f := range feeds {
 		unread := strconv.FormatUint(uint64(f.Unread), 10)
-		str := "(" + unread + ") " + f.Title
+		title := f.Title
+		str := "(" + unread + ") " + title
+
+		columnWidth := s.layout.columnWidth
+		if len(str) > columnWidth {
+			str = str[:columnWidth]
+		}
 		s.printStr(0, n, str)
 	}
 }

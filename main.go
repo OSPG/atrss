@@ -18,7 +18,7 @@ type layout struct {
 	ColumnWidth int `yaml:"column_width"`
 }
 
-type ConfStruct struct {
+type confStruct struct {
 	Feeds  []string `yaml:"feeds"`
 	Layout layout   `yaml:"layout"`
 }
@@ -122,7 +122,7 @@ func eventLoop(s *ui.Screen) {
 	}
 }
 
-func loadFeeds(s *ui.Screen, db *scribble.Driver, cfg ConfStruct) {
+func loadFeeds(s *ui.Screen, db *scribble.Driver, cfg confStruct) {
 	for _, url := range cfg.Feeds {
 		go func(url string) {
 			loadFeed(db, url)
@@ -131,12 +131,12 @@ func loadFeeds(s *ui.Screen, db *scribble.Driver, cfg ConfStruct) {
 	}
 }
 
-func loadConfig() ConfStruct {
+func loadConfig() confStruct {
 	cfgFile := Expand(CONFIG_DIR) + "atrss.yml"
 	data, err := ioutil.ReadFile(cfgFile)
 	check(err)
 
-	var conf ConfStruct
+	var conf confStruct
 	err = yaml.UnmarshalStrict([]byte(data), &conf)
 	check(err)
 	return conf
