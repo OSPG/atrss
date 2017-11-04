@@ -3,10 +3,12 @@ package ui
 import (
 	"github.com/SlyMarbo/rss"
 	"github.com/gdamore/tcell"
+	"github.com/jaytaylor/html2text"
 	"github.com/mattn/go-runewidth"
 
 	"reflect"
 	"strconv"
+	"strings"
 )
 
 // FeedIdx is the index of current feed
@@ -88,12 +90,17 @@ func (s *Screen) printRectangle(x, y int, sx, sy int, c rune) {
 	}
 }
 
-func (s *Screen) printLine(x, y int, sx, sy int) {
-	s.printRectangle(x, y, sx, sy, '│')
+func (s *Screen) printVerticalLine(x, y int, sy int) {
+	s.printRectangle(x, y, 1, sy, '│')
+}
+
+func (s *Screen) printHorizontalLine(x, y int, sx int) {
+	s.printRectangle(x, y, sx, 1, '─')
 }
 
 func (s *Screen) printStr(x, y int, str string) {
 	if x > s.sizeX || y > s.sizeY {
+		return
 		panic("Invalid positions")
 	}
 	for _, c := range str {
@@ -133,6 +140,31 @@ func (s *Screen) showItems(f *rss.Feed) {
 	}
 }
 
+func (s *Screen) showDescription(content string) {
+	w, _ := s.screen.Size()
+	w = w - 40
+	x_off := 50
+	for _, line := range strings.Split(content, "\n") {
+		length := len(line)
+		if length > w {
+			line_off := 0
+			for ; length > w; length -= w {
+				n_line := line[line_off : line_off+w]
+				line_off += w
+
+				x_off++
+				s.printStr(40, x_off, n_line)
+			}
+			n_line := line[line_off:]
+			x_off++
+			s.printStr(40, x_off, n_line)
+		} else {
+			x_off++
+			s.printStr(40, x_off, line)
+		}
+	}
+}
+
 func (s *Screen) PollEvent() interface{} {
 	return s.screen.PollEvent()
 }
@@ -140,13 +172,20 @@ func (s *Screen) PollEvent() interface{} {
 // Redraw prints all the user interface elements and contents
 func (s *Screen) Redraw(feeds []*rss.Feed) {
 	s.screen.Clear()
-	_, h := s.screen.Size()
-	s.printLine(s.layout.columnWidth, 0, 1, h+10)
+	w, h := s.screen.Size()
+	columnWidth := s.layout.columnWidth
+	s.printVerticalLine(columnWidth, 0, h+10)
+	s.printHorizontalLine(columnWidth+1, 50, w-columnWidth-1)
 	s.showFeeds(feeds)
 	if s.curX == 0 && s.curY < len(feeds) {
 		s.showItems(feeds[s.curY])
 	} else if s.curX == 40 {
-		s.showItems(feeds[FeedIdx])
+		feed := feeds[FeedIdx]
+		s.showItems(feed)
+		item := feed.Items[s.curY]
+		content, err := html2text.FromString(item.Summary)
+		check(err)
+		s.showDescription(content)
 	}
 	s.screen.Show()
 }
