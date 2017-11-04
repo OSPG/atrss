@@ -40,8 +40,20 @@ func eventLoop(s *ui.Screen) {
 			case tcell.KeyCtrlO:
 				x, y := s.GetCursor()
 				if x == 40 {
+					var itemIdx int
 					feed := feeds[ui.FeedIdx]
-					item := feed.Items[y]
+					counter := 0
+					for n, e := range feed.Items {
+						if e.Read {
+							continue
+						}
+						if counter == y {
+							itemIdx = n
+							break
+						}
+						counter++
+					}
+					item := feed.Items[itemIdx]
 					OpenURL(item.Link)
 					if !item.Read {
 						item.Read = true
@@ -50,8 +62,17 @@ func eventLoop(s *ui.Screen) {
 				}
 			case tcell.KeyDown:
 				x, y := s.GetCursor()
-				if x == 40 && y < len(feeds[ui.FeedIdx].Items)-1 {
-					y++
+				if x == 40 {
+					f := feeds[ui.FeedIdx]
+					counter := 0
+					for _, e := range f.Items {
+						if !e.Read {
+							counter++
+						}
+					}
+					if y < counter-1 && y < len(f.Items)-1 {
+						y++
+					}
 				} else if y < len(feeds)-1 {
 					y++
 				}
@@ -78,8 +99,20 @@ func eventLoop(s *ui.Screen) {
 			switch ev.Rune() {
 			case ' ':
 				_, y := s.GetCursor()
+				var itemIdx int
 				feed := feeds[ui.FeedIdx]
-				item := feed.Items[y]
+				counter := 0
+				for n, e := range feed.Items {
+					if e.Read {
+						continue
+					}
+					if counter == y {
+						itemIdx = n
+						break
+					}
+					counter++
+				}
+				item := feed.Items[itemIdx]
 				if !item.Read {
 					item.Read = true
 					feed.Unread--

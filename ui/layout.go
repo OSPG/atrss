@@ -5,7 +5,6 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/mattn/go-runewidth"
 
-	"fmt"
 	"strconv"
 )
 
@@ -88,8 +87,12 @@ func (s *Screen) showFeeds(feeds []*rss.Feed) {
 }
 
 func (s *Screen) showItems(f *rss.Feed) {
-	for n, i := range f.Items {
-		s.printStr(40, n, i.Title)
+	y := 0
+	for _, i := range f.Items {
+		if !i.Read {
+			s.printStr(40, y, i.Title)
+			y++
+		}
 	}
 }
 
@@ -108,7 +111,5 @@ func (s *Screen) Redraw(feeds []*rss.Feed) {
 	} else if s.curX == 40 {
 		s.showItems(feeds[FeedIdx])
 	}
-	x, y := s.GetCursor()
-	fmt.Println(x, " ", y)
 	s.screen.Show()
 }

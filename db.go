@@ -26,7 +26,13 @@ func loadFeed(db *scribble.Driver, url string) {
 			}
 		}
 
-		f.Unread = uint32(len(f.Items))
+		counter := uint32(0)
+		for _, e := range f.Items {
+			if !e.Read {
+				counter++
+			}
+		}
+		f.Unread = counter
 		feeds = append(feeds, &f)
 	} else {
 		appendFeed(url)
