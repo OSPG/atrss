@@ -8,6 +8,7 @@ import (
 
 	"./ui"
 	"io/ioutil"
+	"os"
 )
 
 const CONFIG_DIR = "~/.config/atrss/"
@@ -134,9 +135,25 @@ func loadFeeds(s *ui.Screen, db *scribble.Driver, cfg confStruct) {
 }
 
 func loadConfig() confStruct {
-	cfgFile := Expand(CONFIG_DIR) + "atrss.yml"
+	cfgDir := Expand(CONFIG_DIR)
+	if _, err := os.Stat(cfgDir); os.IsNotExist(err) {
+		err := os.MkdirAll(cfgDir, os.ModePerm)
+		check(err)
+	}
+
+	cfgFile := cfgDir + "atrss.yml"
 	data, err := ioutil.ReadFile(cfgFile)
-	check(err)
+	if err != nil {
+		if os.IsNotExist(err) {
+			var conf confStruct
+			d, err := yaml.Marshal(&conf)
+			check(err)
+			err = ioutil.WriteFile(cfgFile, d, os.ModePerm)
+			check(err)
+		} else {
+			check(err)
+		}
+	}
 
 	var conf confStruct
 	err = yaml.UnmarshalStrict([]byte(data), &conf)
