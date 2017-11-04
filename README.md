@@ -1,13 +1,7 @@
 
 # Config
 
-Create a file at  *~/.config/atrss/atrss.yml* with something like:
-```
-feeds:
-   - https://news.ycombinator.com/rss
-   - https://rss.mumei.space
-
-```
+Copy atrss.yml file to  *~/.config/atrss/atrss.yml* 
 
 # Control keys
   - Escape, Ctrl-C, Ctrl-Q: Exit

@@ -1,0 +1,5 @@
+feeds:
+   - https://news.ycombinator.com/rss
+   - https://rss.mumei.space
+layout:
+   column_width: 30
