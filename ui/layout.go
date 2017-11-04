@@ -8,8 +8,12 @@ import (
 	"strconv"
 )
 
-var CurX, CurY int
+// FeedIdx is the index of current feed
 var FeedIdx int
+
+var curX, curY int
+
+var s tcell.Screen
 
 func check(err error) {
 	if err != nil {
@@ -17,18 +21,32 @@ func check(err error) {
 	}
 }
 
+// InitScreen initalize the screen
 func InitScreen() tcell.Screen {
 	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
-	s, err := tcell.NewScreen()
+	tmp, err := tcell.NewScreen()
 	check(err)
-	err = s.Init()
+	err = tmp.Init()
 	check(err)
-	return s
+	s = tmp
+	return tmp
 }
 
+// DeinitScreen close the screen
 func DeinitScreen(s tcell.Screen) {
-	s.Clear()
 	s.Fini()
+}
+
+// GetCursor returns the cursor position
+func GetCursor() (x, y int) {
+	return curX, curY
+}
+
+// SetCursor sets the cursor to a position
+func SetCursor(x, y int) {
+	curX = x
+	curY = y
+	s.ShowCursor(x, y)
 }
 
 func printRectangle(s tcell.Screen, x, y int, sx, sy int, c rune) {
@@ -71,14 +89,15 @@ func showItems(s tcell.Screen, f *rss.Feed) {
 	}
 }
 
-func PrintLayout(s tcell.Screen, feeds []*rss.Feed) {
+// Redraw prints all the user interface elements and contents
+func Redraw(s tcell.Screen, feeds []*rss.Feed) {
 	s.Clear()
 	_, h := s.Size()
 	printLine(s, 30, 0, 1, h+10)
 	showFeeds(s, feeds)
-	if CurX == 0 && CurY < len(feeds) {
-		showItems(s, feeds[CurY])
-	} else if CurX == 40 {
+	if curX == 0 && curY < len(feeds) {
+		showItems(s, feeds[curY])
+	} else if curX == 40 {
 		showItems(s, feeds[FeedIdx])
 	}
 	s.Show()

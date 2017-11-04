@@ -38,9 +38,10 @@ func eventLoop(s tcell.Screen) {
 			case tcell.KeyEscape, tcell.KeyCtrlC, tcell.KeyCtrlQ:
 				return
 			case tcell.KeyCtrlO:
-				if ui.CurX == 40 {
+				x, y := ui.GetCursor()
+				if x == 40 {
 					feed := feeds[ui.FeedIdx]
-					item := feed.Items[ui.CurY]
+					item := feed.Items[y]
 					OpenURL(item.Link)
 					if !item.Read {
 						item.Read = true
@@ -48,26 +49,27 @@ func eventLoop(s tcell.Screen) {
 					}
 				}
 			case tcell.KeyDown:
-				if ui.CurX == 40 && ui.CurY < len(feeds[ui.FeedIdx].Items)-1 {
-					ui.CurY++
-					s.ShowCursor(ui.CurX, ui.CurY)
-				} else if ui.CurY < len(feeds)-1 {
-					ui.CurY++
-					s.ShowCursor(ui.CurX, ui.CurY)
+				x, y := ui.GetCursor()
+				if x == 40 && y < len(feeds[ui.FeedIdx].Items)-1 {
+					y++
+				} else if y < len(feeds)-1 {
+					y++
 				}
+				ui.SetCursor(x, y)
 			case tcell.KeyUp:
-				if ui.CurY > 0 {
-					ui.CurY--
-					s.ShowCursor(ui.CurX, ui.CurY)
+				x, y := ui.GetCursor()
+				if y > 0 {
+					y--
+					ui.SetCursor(x, y)
 				}
 			case tcell.KeyRight:
-				ui.CurX = 40
-				ui.FeedIdx = ui.CurY
-				s.ShowCursor(ui.CurX, ui.CurY)
+				_, y := ui.GetCursor()
+				ui.FeedIdx = y
+				ui.SetCursor(40, y)
 			case tcell.KeyLeft:
-				ui.CurX = 0
-				ui.CurY = ui.FeedIdx
-				s.ShowCursor(ui.CurX, ui.CurY)
+				_, y := ui.GetCursor()
+				y = ui.FeedIdx
+				ui.SetCursor(0, y)
 			case tcell.KeyCtrlR:
 				for _, feed := range feeds {
 					feed.Update()
@@ -75,8 +77,9 @@ func eventLoop(s tcell.Screen) {
 			}
 			switch ev.Rune() {
 			case ' ':
+				_, y := ui.GetCursor()
 				feed := feeds[ui.FeedIdx]
-				item := feed.Items[ui.CurY]
+				item := feed.Items[y]
 				if !item.Read {
 					item.Read = true
 					feed.Unread--
@@ -86,7 +89,7 @@ func eventLoop(s tcell.Screen) {
 			//		case *tcell.EventResize:
 			//			printLayout(s)
 		}
-		ui.PrintLayout(s, feeds)
+		ui.Redraw(s, feeds)
 	}
 }
 
@@ -94,7 +97,7 @@ func loadFeeds(s tcell.Screen, db *scribble.Driver, cfg ConfStruct) {
 	for _, url := range cfg.Feeds {
 		go func(url string) {
 			loadFeed(db, url)
-			ui.PrintLayout(s, feeds)
+			ui.Redraw(s, feeds)
 		}(url)
 	}
 }
@@ -116,8 +119,8 @@ func main() {
 	s := ui.InitScreen()
 	defer ui.DeinitScreen(s)
 
-	s.ShowCursor(ui.CurX, ui.CurY)
-	ui.PrintLayout(s, feeds)
+	ui.SetCursor(0, 0)
+	ui.Redraw(s, feeds)
 	loadFeeds(s, db, cfg)
 	eventLoop(s)
 	saveFeeds(db)
