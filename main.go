@@ -116,6 +116,14 @@ func eventLoop(s *ui.Screen) {
 					item.Read = true
 					feed.Unread--
 				}
+			case 'o', 'O':
+				x, y := s.GetCursor()
+				if x == 40 {
+					feed := feeds[ui.FeedIdx]
+					idx := getUnread(y, feed)
+					item := feed.Items[idx]
+					OpenURL(item.Link)
+				}
 
 			}
 			//		case *tcell.EventResize:
