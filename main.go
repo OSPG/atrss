@@ -14,8 +14,13 @@ const CONFIG_DIR = "~/.config/atrss/"
 
 var feeds []*rss.Feed
 
+type layout struct {
+	ColumnWidth int `yaml:"column_width"`
+}
+
 type ConfStruct struct {
-	Feeds []string `yaml:"feeds"`
+	Feeds  []string `yaml:"feeds"`
+	Layout layout   `yaml:"layout"`
 }
 
 func fetchFeed(url string) *rss.Feed {
@@ -29,6 +34,19 @@ func appendFeed(url string) {
 	feeds = append(feeds, feed)
 }
 
+func getUnread(pos int, feed *rss.Feed) int {
+	counter := 0
+	for n, item := range feed.Items {
+		if !item.Read {
+			if counter == pos {
+				return n
+			}
+			counter++
+		}
+	}
+	panic("Could not find that item")
+}
+
 func eventLoop(s *ui.Screen) {
 	for {
 		ev := s.PollEvent()
@@ -40,20 +58,9 @@ func eventLoop(s *ui.Screen) {
 			case tcell.KeyCtrlO:
 				x, y := s.GetCursor()
 				if x == 40 {
-					var itemIdx int
 					feed := feeds[ui.FeedIdx]
-					counter := 0
-					for n, e := range feed.Items {
-						if e.Read {
-							continue
-						}
-						if counter == y {
-							itemIdx = n
-							break
-						}
-						counter++
-					}
-					item := feed.Items[itemIdx]
+					idx := getUnread(y, feed)
+					item := feed.Items[idx]
 					OpenURL(item.Link)
 					if !item.Read {
 						item.Read = true
@@ -99,20 +106,9 @@ func eventLoop(s *ui.Screen) {
 			switch ev.Rune() {
 			case ' ':
 				_, y := s.GetCursor()
-				var itemIdx int
 				feed := feeds[ui.FeedIdx]
-				counter := 0
-				for n, e := range feed.Items {
-					if e.Read {
-						continue
-					}
-					if counter == y {
-						itemIdx = n
-						break
-					}
-					counter++
-				}
-				item := feed.Items[itemIdx]
+				idx := getUnread(y, feed)
+				item := feed.Items[idx]
 				if !item.Read {
 					item.Read = true
 					feed.Unread--
@@ -141,7 +137,7 @@ func loadConfig() ConfStruct {
 	check(err)
 
 	var conf ConfStruct
-	err = yaml.Unmarshal([]byte(data), &conf)
+	err = yaml.UnmarshalStrict([]byte(data), &conf)
 	check(err)
 	return conf
 }
@@ -151,6 +147,8 @@ func main() {
 	db := openDB(CONFIG_DIR)
 	s := ui.InitScreen()
 	defer s.DeinitScreen()
+
+	s.SetLayout(cfg.Layout)
 
 	s.SetCursor(0, 0)
 	s.Redraw(feeds)

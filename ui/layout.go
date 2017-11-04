@@ -5,16 +5,22 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/mattn/go-runewidth"
 
+	"reflect"
 	"strconv"
 )
 
 // FeedIdx is the index of current feed
 var FeedIdx int
 
+type Layout struct {
+	columnWidth int
+}
+
 type Screen struct {
-	screen tcell.Screen
-	curX   int
-	curY   int
+	layout       Layout
+	screen       tcell.Screen
+	curX, curY   int
+	sizeX, sizeY int
 }
 
 func check(err error) {
@@ -23,20 +29,42 @@ func check(err error) {
 	}
 }
 
+func getField(i interface{}, field string) interface{} {
+	t := reflect.TypeOf(i)
+	count := 0
+	for ; count < t.NumField(); count++ {
+		if t.Field(count).Name == field {
+			break
+		}
+	}
+	//	real_type := t.Field(count).Type
+	v := reflect.ValueOf(i)
+	return v.Field(count).Interface()
+}
+
 // InitScreen initalize the screen
 func InitScreen() *Screen {
 	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
-	tmp, err := tcell.NewScreen()
+	s, err := tcell.NewScreen()
 	check(err)
-	err = tmp.Init()
+	err = s.Init()
 	check(err)
-	return &Screen{screen: tmp}
+	x, y := s.Size()
+
+	// Default values
+	l := Layout{columnWidth: 30}
+
+	return &Screen{screen: s, sizeX: x, sizeY: y, layout: l}
 }
 
 // DeinitScreen close the screen
 func (s *Screen) DeinitScreen() {
 	s.screen.Clear()
 	s.screen.Fini()
+}
+
+func (s *Screen) SetLayout(l interface{}) {
+	s.layout.columnWidth = getField(l, "ColumnWidth").(int)
 }
 
 // GetCursor returns the cursor position
@@ -65,6 +93,9 @@ func (s *Screen) printLine(x, y int, sx, sy int) {
 }
 
 func (s *Screen) printStr(x, y int, str string) {
+	if x > s.sizeX || y > s.sizeY {
+		panic("Invalid positions")
+	}
 	for _, c := range str {
 		var comb []rune
 		w := runewidth.RuneWidth(c)
@@ -104,7 +135,7 @@ func (s *Screen) PollEvent() interface{} {
 func (s *Screen) Redraw(feeds []*rss.Feed) {
 	s.screen.Clear()
 	_, h := s.screen.Size()
-	s.printLine(30, 0, 1, h+10)
+	s.printLine(s.layout.columnWidth, 0, 1, h+10)
 	s.showFeeds(feeds)
 	if s.curX == 0 && s.curY < len(feeds) {
 		s.showItems(feeds[s.curY])
