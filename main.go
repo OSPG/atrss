@@ -91,9 +91,11 @@ func eventLoop(s *ui.Screen) {
 					s.SetCursor(x, y)
 				}
 			case tcell.KeyRight:
-				_, y := s.GetCursor()
-				ui.FeedIdx = y
-				s.SetCursor(40, y)
+				x, y := s.GetCursor()
+				if x == 0 {
+					ui.FeedIdx = y
+					s.SetCursor(40, y)
+				}
 			case tcell.KeyLeft:
 				_, y := s.GetCursor()
 				y = ui.FeedIdx
