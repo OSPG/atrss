@@ -29,7 +29,7 @@ func appendFeed(url string) {
 	feeds = append(feeds, feed)
 }
 
-func eventLoop(s tcell.Screen) {
+func eventLoop(s *ui.Screen) {
 	for {
 		ev := s.PollEvent()
 		switch ev := ev.(type) {
@@ -38,7 +38,7 @@ func eventLoop(s tcell.Screen) {
 			case tcell.KeyEscape, tcell.KeyCtrlC, tcell.KeyCtrlQ:
 				return
 			case tcell.KeyCtrlO:
-				x, y := ui.GetCursor()
+				x, y := s.GetCursor()
 				if x == 40 {
 					feed := feeds[ui.FeedIdx]
 					item := feed.Items[y]
@@ -49,27 +49,27 @@ func eventLoop(s tcell.Screen) {
 					}
 				}
 			case tcell.KeyDown:
-				x, y := ui.GetCursor()
+				x, y := s.GetCursor()
 				if x == 40 && y < len(feeds[ui.FeedIdx].Items)-1 {
 					y++
 				} else if y < len(feeds)-1 {
 					y++
 				}
-				ui.SetCursor(x, y)
+				s.SetCursor(x, y)
 			case tcell.KeyUp:
-				x, y := ui.GetCursor()
+				x, y := s.GetCursor()
 				if y > 0 {
 					y--
-					ui.SetCursor(x, y)
+					s.SetCursor(x, y)
 				}
 			case tcell.KeyRight:
-				_, y := ui.GetCursor()
+				_, y := s.GetCursor()
 				ui.FeedIdx = y
-				ui.SetCursor(40, y)
+				s.SetCursor(40, y)
 			case tcell.KeyLeft:
-				_, y := ui.GetCursor()
+				_, y := s.GetCursor()
 				y = ui.FeedIdx
-				ui.SetCursor(0, y)
+				s.SetCursor(0, y)
 			case tcell.KeyCtrlR:
 				for _, feed := range feeds {
 					feed.Update()
@@ -77,7 +77,7 @@ func eventLoop(s tcell.Screen) {
 			}
 			switch ev.Rune() {
 			case ' ':
-				_, y := ui.GetCursor()
+				_, y := s.GetCursor()
 				feed := feeds[ui.FeedIdx]
 				item := feed.Items[y]
 				if !item.Read {
@@ -89,15 +89,15 @@ func eventLoop(s tcell.Screen) {
 			//		case *tcell.EventResize:
 			//			printLayout(s)
 		}
-		ui.Redraw(s, feeds)
+		s.Redraw(feeds)
 	}
 }
 
-func loadFeeds(s tcell.Screen, db *scribble.Driver, cfg ConfStruct) {
+func loadFeeds(s *ui.Screen, db *scribble.Driver, cfg ConfStruct) {
 	for _, url := range cfg.Feeds {
 		go func(url string) {
 			loadFeed(db, url)
-			ui.Redraw(s, feeds)
+			s.Redraw(feeds)
 		}(url)
 	}
 }
@@ -117,10 +117,10 @@ func main() {
 	cfg := loadConfig()
 	db := openDB(CONFIG_DIR)
 	s := ui.InitScreen()
-	defer ui.DeinitScreen(s)
+	defer s.DeinitScreen()
 
-	ui.SetCursor(0, 0)
-	ui.Redraw(s, feeds)
+	s.SetCursor(0, 0)
+	s.Redraw(feeds)
 	loadFeeds(s, db, cfg)
 	eventLoop(s)
 	saveFeeds(db)
