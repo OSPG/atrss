@@ -17,6 +17,7 @@ var feeds []*rss.Feed
 
 type layout struct {
 	ColumnWidth int `yaml:"column_width"`
+	ItemsMargin int `yaml:"items_margin"`
 }
 
 type confStruct struct {

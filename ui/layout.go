@@ -16,6 +16,7 @@ var FeedIdx int
 
 type Layout struct {
 	columnWidth int
+	itemsMargin int
 }
 
 type Screen struct {
@@ -54,7 +55,7 @@ func InitScreen() *Screen {
 	x, y := s.Size()
 
 	// Default values
-	l := Layout{columnWidth: 30}
+	l := Layout{columnWidth: 30, itemsMargin: 5}
 
 	return &Screen{screen: s, sizeX: x, sizeY: y, layout: l}
 }
@@ -67,6 +68,7 @@ func (s *Screen) DeinitScreen() {
 
 func (s *Screen) SetLayout(l interface{}) {
 	s.layout.columnWidth = getField(l, "ColumnWidth").(int)
+	s.layout.itemsMargin = getField(l, "ItemsMargin").(int)
 }
 
 // GetCursor returns the cursor position
@@ -131,10 +133,12 @@ func (s *Screen) showFeeds(feeds []*rss.Feed) {
 }
 
 func (s *Screen) showItems(f *rss.Feed) {
+	cw := s.layout.columnWidth
+	im := s.layout.itemsMargin
 	y := 0
 	for _, i := range f.Items {
 		if !i.Read {
-			s.printStr(40, y, i.Title)
+			s.printStr(cw+im, y, i.Title)
 			y++
 		}
 	}
@@ -142,7 +146,10 @@ func (s *Screen) showItems(f *rss.Feed) {
 
 func (s *Screen) showDescription(content string) {
 	w, _ := s.screen.Size()
-	w = w - 40
+	cw := s.layout.columnWidth
+	im := s.layout.itemsMargin
+	itemsColumn := cw + im
+	w = w - itemsColumn
 	x_off := 50
 	for _, line := range strings.Split(content, "\n") {
 		length := len(line)
@@ -153,14 +160,14 @@ func (s *Screen) showDescription(content string) {
 				line_off += w
 
 				x_off++
-				s.printStr(40, x_off, n_line)
+				s.printStr(itemsColumn, x_off, n_line)
 			}
 			n_line := line[line_off:]
 			x_off++
-			s.printStr(40, x_off, n_line)
+			s.printStr(itemsColumn, x_off, n_line)
 		} else {
 			x_off++
-			s.printStr(40, x_off, line)
+			s.printStr(itemsColumn, x_off, line)
 		}
 	}
 }
@@ -173,13 +180,15 @@ func (s *Screen) PollEvent() interface{} {
 func (s *Screen) Redraw(feeds []*rss.Feed) {
 	s.screen.Clear()
 	w, h := s.screen.Size()
-	columnWidth := s.layout.columnWidth
-	s.printVerticalLine(columnWidth, 0, h+10)
-	s.printHorizontalLine(columnWidth+1, 50, w-columnWidth-1)
+	cw := s.layout.columnWidth
+	im := s.layout.itemsMargin
+
+	s.printVerticalLine(cw, 0, h+10)
+	s.printHorizontalLine(cw+1, 50, w-cw-1)
 	s.showFeeds(feeds)
 	if s.curX == 0 && s.curY < len(feeds) {
 		s.showItems(feeds[s.curY])
-	} else if s.curX == 40 {
+	} else if s.curX == cw+im {
 		feed := feeds[FeedIdx]
 		s.showItems(feed)
 		item := feed.Items[s.curY]
