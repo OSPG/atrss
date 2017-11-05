@@ -6,7 +6,7 @@ import (
 	scribble "github.com/nanobox-io/golang-scribble"
 	"gopkg.in/yaml.v2"
 
-	"./ui"
+	"github.com/OSPG/atrss/ui"
 	"io/ioutil"
 	"os"
 )
