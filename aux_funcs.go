@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"os/exec"
 	"os/user"
 	"strings"
@@ -12,8 +13,9 @@ func check(err error) {
 	}
 }
 
-func OpenURL(url string) {
-	cmd := exec.Command("firefox", url)
+func OpenURL(browser, url string) {
+	log.Println(browser)
+	cmd := exec.Command(browser, url)
 	err := cmd.Start()
 	check(err)
 }

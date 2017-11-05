@@ -21,8 +21,9 @@ type layout struct {
 }
 
 type confStruct struct {
-	Feeds  []string `yaml:"feeds"`
-	Layout layout   `yaml:"layout"`
+	Browser string   `yaml:"browser"`
+	Feeds   []string `yaml:"feeds"`
+	Layout  layout   `yaml:"layout"`
 }
 
 func fetchFeed(url string) *rss.Feed {
@@ -49,7 +50,7 @@ func getUnread(pos int, feed *rss.Feed) int {
 	panic("Could not find that item")
 }
 
-func eventLoop(s *ui.Screen) {
+func eventLoop(s *ui.Screen, cfg confStruct) {
 	for {
 		ev := s.PollEvent()
 		switch ev := ev.(type) {
@@ -59,11 +60,11 @@ func eventLoop(s *ui.Screen) {
 				return
 			case tcell.KeyCtrlO:
 				x, y := s.GetCursor()
-				if x == 40 {
+				if x == s.ItemsColumn {
 					feed := feeds[ui.FeedIdx]
 					idx := getUnread(y, feed)
 					item := feed.Items[idx]
-					OpenURL(item.Link)
+					OpenURL(cfg.Browser, item.Link)
 					if !item.Read {
 						item.Read = true
 						feed.Unread--
@@ -71,7 +72,7 @@ func eventLoop(s *ui.Screen) {
 				}
 			case tcell.KeyDown:
 				x, y := s.GetCursor()
-				if x == 40 {
+				if x == s.ItemsColumn {
 					f := feeds[ui.FeedIdx]
 					counter := 0
 					for _, e := range f.Items {
@@ -96,7 +97,7 @@ func eventLoop(s *ui.Screen) {
 				x, y := s.GetCursor()
 				if x == 0 {
 					ui.FeedIdx = y
-					s.SetCursor(40, y)
+					s.SetCursor(s.ItemsColumn, y)
 				}
 			case tcell.KeyLeft:
 				_, y := s.GetCursor()
@@ -119,11 +120,11 @@ func eventLoop(s *ui.Screen) {
 				}
 			case 'o', 'O':
 				x, y := s.GetCursor()
-				if x == 40 {
+				if x == s.ItemsColumn {
 					feed := feeds[ui.FeedIdx]
 					idx := getUnread(y, feed)
 					item := feed.Items[idx]
-					OpenURL(item.Link)
+					OpenURL(cfg.Browser, item.Link)
 				}
 
 			}
@@ -181,6 +182,6 @@ func main() {
 	s.SetCursor(0, 0)
 	s.Redraw(feeds)
 	loadFeeds(s, db, cfg)
-	eventLoop(s)
+	eventLoop(s, cfg)
 	saveFeeds(db)
 }

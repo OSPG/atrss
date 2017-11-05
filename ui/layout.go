@@ -24,6 +24,7 @@ type Screen struct {
 	screen       tcell.Screen
 	curX, curY   int
 	sizeX, sizeY int
+	ItemsColumn  int
 }
 
 func check(err error) {
@@ -55,9 +56,11 @@ func InitScreen() *Screen {
 	x, y := s.Size()
 
 	// Default values
-	l := Layout{columnWidth: 30, itemsMargin: 5}
+	cw := 30
+	im := 5
+	l := Layout{columnWidth: cw, itemsMargin: im}
 
-	return &Screen{screen: s, sizeX: x, sizeY: y, layout: l}
+	return &Screen{screen: s, sizeX: x, sizeY: y, layout: l, ItemsColumn: cw + im}
 }
 
 // DeinitScreen close the screen
@@ -69,6 +72,7 @@ func (s *Screen) DeinitScreen() {
 func (s *Screen) SetLayout(l interface{}) {
 	s.layout.columnWidth = getField(l, "ColumnWidth").(int)
 	s.layout.itemsMargin = getField(l, "ItemsMargin").(int)
+	s.ItemsColumn = s.layout.columnWidth + s.layout.itemsMargin
 }
 
 // GetCursor returns the cursor position
