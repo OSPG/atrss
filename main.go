@@ -114,7 +114,7 @@ func eventLoop(s *ui.Screen, cfg confStruct) {
 				x, y := s.GetCursor()
 				if x == 0 {
 					ui.FeedIdx = y
-					s.SetCursor(s.ItemsColumn, y)
+					s.SetCursor(s.ItemsColumn, 0)
 				}
 			case tcell.KeyLeft:
 				_, y := s.GetCursor()
@@ -127,13 +127,16 @@ func eventLoop(s *ui.Screen, cfg confStruct) {
 			}
 			switch ev.Rune() {
 			case ' ':
-				_, y := s.GetCursor()
-				feed := feeds[ui.FeedIdx]
-				idx := getUnread(y, feed)
-				item := feed.Items[idx]
-				if !item.Read {
-					item.Read = true
-					feed.Unread--
+				x, _ := s.GetCursor()
+				if x == s.ItemsColumn {
+					_, y := s.GetCursor()
+					feed := feeds[ui.FeedIdx]
+					idx := getUnread(y, feed)
+					item := feed.Items[idx]
+					if !item.Read {
+						item.Read = true
+						feed.Unread--
+					}
 				}
 			case 'o', 'O':
 				x, y := s.GetCursor()
