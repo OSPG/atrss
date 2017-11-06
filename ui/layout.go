@@ -18,6 +18,7 @@ var FeedIdx int
 type Layout struct {
 	columnWidth int
 	itemsMargin int
+	boxHeigh    int
 }
 
 type Screen struct {
@@ -46,12 +47,12 @@ func InitScreen() *Screen {
 	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
 	s, err := tcell.NewScreen()
 	if err != nil {
-		log.Fataln("Could not create screen: ", err)
+		log.Fatalln("Could not create screen: ", err)
 	}
 
 	err = s.Init()
 	if err != nil {
-		log.Fataln("Could not initalize screen: ", err)
+		log.Fatalln("Could not initalize screen: ", err)
 	}
 	x, y := s.Size()
 
@@ -72,6 +73,7 @@ func (s *Screen) DeinitScreen() {
 func (s *Screen) SetLayout(l interface{}) {
 	s.layout.columnWidth = getField(l, "ColumnWidth").(int)
 	s.layout.itemsMargin = getField(l, "ItemsMargin").(int)
+	s.layout.boxHeigh = getField(l, "BoxHeigh").(int)
 	s.ItemsColumn = s.layout.columnWidth + s.layout.itemsMargin
 }
 
@@ -145,34 +147,40 @@ func (s *Screen) showItems(f *rss.Feed) {
 			s.printStr(cw+im, y, i.Title)
 			y++
 		}
+
+		// We don't have enough space to show more items
+		if y == s.layout.boxHeigh {
+			return
+		}
 	}
 }
 
 func (s *Screen) showDescription(content string) {
-	w, _ := s.screen.Size()
+	w, h := s.screen.Size()
 	cw := s.layout.columnWidth
 	im := s.layout.itemsMargin
 	itemsColumn := cw + im
 	w = w - itemsColumn
-	x_off := 50
+	x_off := s.layout.boxHeigh
 	for _, line := range strings.Split(content, "\n") {
+		if x_off >= h {
+			return
+		}
 		length := len(line)
-		if length > w {
-			line_off := 0
-			for ; length > w; length -= w {
-				n_line := line[line_off : line_off+w]
-				line_off += w
+		line_off := 0
+		for ; x_off < h && length > w; length -= w {
+			n_line := line[line_off : line_off+w]
+			line_off += w
 
-				x_off++
-				s.printStr(itemsColumn, x_off, n_line)
-			}
-			n_line := line[line_off:]
 			x_off++
 			s.printStr(itemsColumn, x_off, n_line)
-		} else {
-			x_off++
-			s.printStr(itemsColumn, x_off, line)
 		}
+		if x_off >= h {
+			return
+		}
+		n_line := line[line_off:]
+		x_off++
+		s.printStr(itemsColumn, x_off, n_line)
 	}
 }
 
@@ -186,9 +194,10 @@ func (s *Screen) Redraw(feeds []*rss.Feed) {
 	w, h := s.screen.Size()
 	cw := s.layout.columnWidth
 	im := s.layout.itemsMargin
+	bh := s.layout.boxHeigh
 
 	s.printVerticalLine(cw, 0, h+10)
-	s.printHorizontalLine(cw+1, 50, w-cw-1)
+	s.printHorizontalLine(cw+1, bh, w-cw-1)
 	s.showFeeds(feeds)
 	if s.curX == 0 && s.curY < len(feeds) {
 		s.showItems(feeds[s.curY])

@@ -6,3 +6,4 @@ feeds:
 layout:
    column_width: 30
    items_margin: 5
+   items_box_heigh: 50

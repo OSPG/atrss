@@ -19,6 +19,7 @@ var feeds []*rss.Feed
 type layout struct {
 	ColumnWidth int `yaml:"column_width"`
 	ItemsMargin int `yaml:"items_margin"`
+	BoxHeigh    int `yaml:"items_box_heigh"`
 }
 
 type confStruct struct {
@@ -96,7 +97,7 @@ func eventLoop(s *ui.Screen, cfg confStruct) {
 							counter++
 						}
 					}
-					if y < counter-1 && y < len(f.Items)-1 {
+					if y < cfg.Layout.BoxHeigh-1 && y < counter-1 && y < len(f.Items)-1 {
 						y++
 					}
 				} else if y < len(feeds)-1 {
