@@ -8,6 +8,7 @@ import (
 
 	"github.com/OSPG/atrss/ui"
 	"io/ioutil"
+	"log"
 	"os"
 )
 
@@ -21,19 +22,34 @@ type layout struct {
 }
 
 type confStruct struct {
-	Browser string   `yaml:"browser"`
-	Feeds   []string `yaml:"feeds"`
-	Layout  layout   `yaml:"layout"`
+	Browser  string   `yaml:"browser"`
+	Log_file string   `yaml:"log_file"`
+	Feeds    []string `yaml:"feeds"`
+	Layout   layout   `yaml:"layout"`
 }
 
-func fetchFeed(url string) *rss.Feed {
+func check(err error) {
+	if err != nil {
+		panic(err)
+	}
+}
+
+func fetchFeed(url string) (*rss.Feed, error) {
 	feed, err := rss.Fetch(url)
-	check(err)
-	return feed
+	if err != nil {
+		log.Printf("Fetch error: %s. Error: %v\n", url, err)
+		return nil, err
+	}
+	return feed, nil
 }
 
 func appendFeed(url string) {
-	feed := fetchFeed(url)
+	feed, err := fetchFeed(url)
+	if err != nil {
+		log.Println("Fetch failed: ", err)
+		return
+	}
+
 	feeds = append(feeds, feed)
 }
 
@@ -171,8 +187,18 @@ func loadConfig() confStruct {
 	return conf
 }
 
+func initLogger(cfg confStruct) {
+	logFile := Expand(cfg.Log_file)
+	file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY, 0666)
+	check(err)
+
+	log.SetOutput(file)
+	log.Println("Logger initalized")
+}
+
 func main() {
 	cfg := loadConfig()
+	initLogger(cfg)
 	db := openDB(CONFIG_DIR)
 	s := ui.InitScreen()
 	defer s.DeinitScreen()

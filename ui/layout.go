@@ -6,6 +6,7 @@ import (
 	"github.com/jaytaylor/html2text"
 	"github.com/mattn/go-runewidth"
 
+	"log"
 	"reflect"
 	"strconv"
 	"strings"
@@ -27,12 +28,6 @@ type Screen struct {
 	ItemsColumn  int
 }
 
-func check(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
 func getField(i interface{}, field string) interface{} {
 	t := reflect.TypeOf(i)
 	count := 0
@@ -50,9 +45,14 @@ func getField(i interface{}, field string) interface{} {
 func InitScreen() *Screen {
 	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
 	s, err := tcell.NewScreen()
-	check(err)
+	if err != nil {
+		log.Fataln("Could not create screen: ", err)
+	}
+
 	err = s.Init()
-	check(err)
+	if err != nil {
+		log.Fataln("Could not initalize screen: ", err)
+	}
 	x, y := s.Size()
 
 	// Default values
@@ -106,8 +106,8 @@ func (s *Screen) printHorizontalLine(x, y int, sx int) {
 
 func (s *Screen) printStr(x, y int, str string) {
 	if x > s.sizeX || y > s.sizeY {
+		log.Printf("WARNING: Invalid positions %d %d. Max: %d %d\n", x, y, s.sizeX, s.sizeY)
 		return
-		panic("Invalid positions")
 	}
 	for _, c := range str {
 		var comb []rune
@@ -197,7 +197,10 @@ func (s *Screen) Redraw(feeds []*rss.Feed) {
 		s.showItems(feed)
 		item := feed.Items[s.curY]
 		content, err := html2text.FromString(item.Summary)
-		check(err)
+		if err != nil {
+			log.Println("Could not show item summary: ", err)
+		}
+
 		s.showDescription(content)
 	}
 	s.screen.Show()

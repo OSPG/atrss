@@ -7,22 +7,19 @@ import (
 	"strings"
 )
 
-func check(err error) {
-	if err != nil {
-		panic(err)
-	}
-}
-
 func OpenURL(browser, url string) {
-	log.Println(browser)
 	cmd := exec.Command(browser, url)
 	err := cmd.Start()
-	check(err)
+	if err != nil {
+		log.Println("Can not execute command: ", err)
+	}
 }
 
 func Expand(path string) string {
 	usr, err := user.Current()
-	check(err)
+	if err != nil {
+		log.Fatalln("Can not get current user: ", err)
+	}
 
 	return strings.Replace(path, "~", usr.HomeDir, 1)
 }
