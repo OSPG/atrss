@@ -38,6 +38,7 @@ func check(err error) {
 func eventLoop(s *ui.Screen, cfg confStruct) {
 	for {
 		ev := s.PollEvent()
+
 		x, y := s.GetCursor()
 		switch ev := ev.(type) {
 		case *tcell.EventKey:
@@ -90,6 +91,10 @@ func eventLoop(s *ui.Screen, cfg confStruct) {
 					f := feedManager.Get(ui.FeedIdx)
 					item := f.GetUnreadItem(y)
 					OpenURL(cfg.Browser, item.Link)
+				}
+			case ':':
+				if ui.StartCmdLine(s) {
+					return
 				}
 
 			}

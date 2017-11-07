@@ -184,6 +184,12 @@ func (s *Screen) showDescription(content string) {
 	}
 }
 
+func (s *Screen) ShowCmdLine() {
+	_, h := s.screen.Size()
+	s.SetCursor(1, h-1)
+	s.printStr(0, h-1, ":")
+}
+
 func (s *Screen) PollEvent() interface{} {
 	return s.screen.PollEvent()
 }
