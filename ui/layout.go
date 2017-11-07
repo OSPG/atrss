@@ -1,15 +1,16 @@
 package ui
 
 import (
-	"github.com/OSPG/atrss/feed"
-	"github.com/gdamore/tcell"
-	"github.com/jaytaylor/html2text"
-	"github.com/mattn/go-runewidth"
-
 	"log"
 	"reflect"
 	"strconv"
 	"strings"
+
+	"github.com/gdamore/tcell"
+	"github.com/jaytaylor/html2text"
+	"github.com/mattn/go-runewidth"
+
+	"github.com/OSPG/atrss/feed"
 )
 
 // FeedIdx is the index of current feed
