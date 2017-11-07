@@ -2,7 +2,7 @@ package main
 
 import (
 	b64 "encoding/base64"
-	"github.com/SlyMarbo/rss"
+	"github.com/OSPG/atrss/feed"
 	scribble "github.com/nanobox-io/golang-scribble"
 	"log"
 )
@@ -17,18 +17,18 @@ func openDB(dir string) *scribble.Driver {
 }
 
 func loadFeed(db *scribble.Driver, url string) {
-	f := rss.Feed{}
+	f := feed.Feed{}
 	encoded_url := b64.StdEncoding.EncodeToString([]byte(url))
 	err := db.Read("feed", encoded_url, &f)
 
 	if err == nil {
-		updatedFeed, err := fetchFeed(url)
+		updatedFeed, err := feed.Fetch(url)
 		if err == nil {
 
-			for _, item := range updatedFeed.Items {
-				if _, ok := f.ItemMap[item.ID]; !ok {
-					f.ItemMap[item.ID] = struct{}{}
-					f.Items = append(f.Items, item)
+			for _, item := range updatedFeed.Feed.Items {
+				if _, ok := f.Feed.ItemMap[item.ID]; !ok {
+					f.Feed.ItemMap[item.ID] = struct{}{}
+					f.Feed.Items = append(f.Feed.Items, item)
 				}
 			}
 
@@ -36,26 +36,21 @@ func loadFeed(db *scribble.Driver, url string) {
 			log.Println("Coud not update the feed: ", err)
 		}
 		counter := uint32(0)
-		for _, e := range f.Items {
+		for _, e := range f.Feed.Items {
 			if !e.Read {
 				counter++
 			}
 		}
 		f.Unread = counter
-		feeds = append(feeds, &f)
+		feedManager.Append(&f)
 	} else {
-		appendFeed(url)
-		feed := feeds[len(feeds)-1]
-		err := db.Write("feed", encoded_url, feed)
-		if err != nil {
-			log.Fatalln(err)
-		}
+		feedManager.New(url)
 	}
 }
 
 func saveFeeds(db *scribble.Driver) {
-	for _, f := range feeds {
-		encoded_url := b64.StdEncoding.EncodeToString([]byte(f.UpdateURL))
+	for _, f := range feedManager.Feeds {
+		encoded_url := b64.StdEncoding.EncodeToString([]byte(f.Feed.UpdateURL))
 		err := db.Write("feed", encoded_url, f)
 		if err != nil {
 			log.Fatalln(err)

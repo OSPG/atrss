@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"github.com/SlyMarbo/rss"
+	"github.com/OSPG/atrss/feed"
 	"github.com/gdamore/tcell"
 	"github.com/jaytaylor/html2text"
 	"github.com/mattn/go-runewidth"
@@ -124,10 +124,10 @@ func (s *Screen) printStr(x, y int, str string) {
 	}
 }
 
-func (s *Screen) showFeeds(feeds []*rss.Feed) {
+func (s *Screen) showFeeds(feeds []*feed.Feed) {
 	for n, f := range feeds {
 		unread := strconv.FormatUint(uint64(f.Unread), 10)
-		title := f.Title
+		title := f.Feed.Title
 		str := "(" + unread + ") " + title
 
 		columnWidth := s.layout.columnWidth
@@ -138,11 +138,11 @@ func (s *Screen) showFeeds(feeds []*rss.Feed) {
 	}
 }
 
-func (s *Screen) showItems(f *rss.Feed) {
+func (s *Screen) showItems(f *feed.Feed) {
 	cw := s.layout.columnWidth
 	im := s.layout.itemsMargin
 	y := 0
-	for _, i := range f.Items {
+	for _, i := range f.Feed.Items {
 		if !i.Read {
 			s.printStr(cw+im, y, i.Title)
 			y++
@@ -189,7 +189,7 @@ func (s *Screen) PollEvent() interface{} {
 }
 
 // Redraw prints all the user interface elements and contents
-func (s *Screen) Redraw(feeds []*rss.Feed) {
+func (s *Screen) Redraw(feedManager *feed.Manager) {
 	s.screen.Clear()
 	w, h := s.screen.Size()
 	cw := s.layout.columnWidth
@@ -198,13 +198,14 @@ func (s *Screen) Redraw(feeds []*rss.Feed) {
 
 	s.printVerticalLine(cw, 0, h+10)
 	s.printHorizontalLine(cw+1, bh, w-cw-1)
-	s.showFeeds(feeds)
-	if s.curX == 0 && s.curY < len(feeds) {
-		s.showItems(feeds[s.curY])
-	} else if s.curX == cw+im {
-		feed := feeds[FeedIdx]
+	s.showFeeds(feedManager.Feeds)
+	if s.curX == 0 && s.curY < feedManager.Len() {
+		feed := feedManager.Get(s.curY)
 		s.showItems(feed)
-		item := feed.Items[s.curY]
+	} else if s.curX == cw+im {
+		feed := feedManager.Get(FeedIdx)
+		s.showItems(feed)
+		item := feed.GetItem(s.curY)
 		content, err := html2text.FromString(item.Summary)
 		if err != nil {
 			log.Println("Could not show item summary: ", err)

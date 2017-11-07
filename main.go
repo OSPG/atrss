@@ -1,11 +1,11 @@
 package main
 
 import (
-	"github.com/SlyMarbo/rss"
 	"github.com/gdamore/tcell"
 	scribble "github.com/nanobox-io/golang-scribble"
 	"gopkg.in/yaml.v2"
 
+	"github.com/OSPG/atrss/feed"
 	"github.com/OSPG/atrss/ui"
 	"io/ioutil"
 	"log"
@@ -13,8 +13,6 @@ import (
 )
 
 const CONFIG_DIR = "~/.config/atrss/"
-
-var feeds []*rss.Feed
 
 type layout struct {
 	ColumnWidth int `yaml:"column_width"`
@@ -29,89 +27,46 @@ type confStruct struct {
 	Layout   layout   `yaml:"layout"`
 }
 
+var feedManager feed.Manager
+
 func check(err error) {
 	if err != nil {
 		panic(err)
 	}
 }
 
-func fetchFeed(url string) (*rss.Feed, error) {
-	feed, err := rss.Fetch(url)
-	if err != nil {
-		log.Printf("Fetch error: %s. Error: %v\n", url, err)
-		return nil, err
-	}
-	return feed, nil
-}
-
-func appendFeed(url string) {
-	feed, err := fetchFeed(url)
-	if err != nil {
-		log.Println("Fetch failed: ", err)
-		return
-	}
-
-	feeds = append(feeds, feed)
-}
-
-func getUnread(pos int, feed *rss.Feed) int {
-	counter := 0
-	for n, item := range feed.Items {
-		if !item.Read {
-			if counter == pos {
-				return n
-			}
-			counter++
-		}
-	}
-	panic("Could not find that item")
-}
-
 func eventLoop(s *ui.Screen, cfg confStruct) {
 	for {
 		ev := s.PollEvent()
+		x, y := s.GetCursor()
 		switch ev := ev.(type) {
 		case *tcell.EventKey:
 			switch ev.Key() {
 			case tcell.KeyEscape, tcell.KeyCtrlC, tcell.KeyCtrlQ:
 				return
 			case tcell.KeyCtrlO:
-				x, y := s.GetCursor()
 				if x == s.ItemsColumn {
-					feed := feeds[ui.FeedIdx]
-					idx := getUnread(y, feed)
-					item := feed.Items[idx]
+					f := feedManager.Get(ui.FeedIdx)
+					item := f.GetUnreadItem(y)
 					OpenURL(cfg.Browser, item.Link)
-					if !item.Read {
-						item.Read = true
-						feed.Unread--
-					}
+					f.ReadItem(item)
 				}
 			case tcell.KeyDown:
-				x, y := s.GetCursor()
 				if x == s.ItemsColumn {
-					f := feeds[ui.FeedIdx]
-					counter := 0
-					for _, e := range f.Items {
-						if !e.Read {
-							counter++
-						}
-					}
-					if y < cfg.Layout.BoxHeigh-1 && y < counter-1 && y < len(f.Items)-1 {
+					f := feedManager.Get(ui.FeedIdx)
+					if y < cfg.Layout.BoxHeigh-1 && uint32(y) < f.Unread-1 {
 						y++
 					}
-				} else if y < len(feeds)-1 {
+				} else if y < feedManager.Len()-1 {
 					y++
 				}
 				s.SetCursor(x, y)
 			case tcell.KeyUp:
-				x, y := s.GetCursor()
 				if y > 0 {
 					y--
 					s.SetCursor(x, y)
 				}
 			case tcell.KeyRight:
-				x, y := s.GetCursor()
 				if x == 0 {
 					ui.FeedIdx = y
 					s.SetCursor(s.ItemsColumn, 0)
@@ -121,29 +76,19 @@ func eventLoop(s *ui.Screen, cfg confStruct) {
 				y = ui.FeedIdx
 				s.SetCursor(0, y)
 			case tcell.KeyCtrlR:
-				for _, feed := range feeds {
-					feed.Update()
-				}
+				feedManager.Update()
 			}
 			switch ev.Rune() {
 			case ' ':
-				x, _ := s.GetCursor()
 				if x == s.ItemsColumn {
-					_, y := s.GetCursor()
-					feed := feeds[ui.FeedIdx]
-					idx := getUnread(y, feed)
-					item := feed.Items[idx]
-					if !item.Read {
-						item.Read = true
-						feed.Unread--
-					}
+					f := feedManager.Get(ui.FeedIdx)
+					item := f.GetUnreadItem(y)
+					f.ReadItem(item)
 				}
 			case 'o', 'O':
-				x, y := s.GetCursor()
 				if x == s.ItemsColumn {
-					feed := feeds[ui.FeedIdx]
-					idx := getUnread(y, feed)
-					item := feed.Items[idx]
+					f := feedManager.Get(ui.FeedIdx)
+					item := f.GetUnreadItem(y)
 					OpenURL(cfg.Browser, item.Link)
 				}
 
@@ -151,7 +96,7 @@ func eventLoop(s *ui.Screen, cfg confStruct) {
 			//		case *tcell.EventResize:
 			//			printLayout(s)
 		}
-		s.Redraw(feeds)
+		s.Redraw(&feedManager)
 	}
 }
 
@@ -159,7 +104,7 @@ func loadFeeds(s *ui.Screen, db *scribble.Driver, cfg confStruct) {
 	for _, url := range cfg.Feeds {
 		go func(url string) {
 			loadFeed(db, url)
-			s.Redraw(feeds)
+			s.Redraw(&feedManager)
 		}(url)
 	}
 }
@@ -210,7 +155,7 @@ func main() {
 	s.SetLayout(cfg.Layout)
 
 	s.SetCursor(0, 0)
-	s.Redraw(feeds)
+	s.Redraw(&feedManager)
 	loadFeeds(s, db, cfg)
 	eventLoop(s, cfg)
 	saveFeeds(db)
