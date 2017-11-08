@@ -16,7 +16,8 @@ func openDB(dir string) *scribble.Driver {
 	return db
 }
 
-func loadFeed(db *scribble.Driver, url string) {
+func loadFeed(db *scribble.Driver, feedConf confFeed) {
+	url := feedConf.Url
 	f := feed.Feed{}
 	encoded_url := b64.StdEncoding.EncodeToString([]byte(url))
 	err := db.Read("feed", encoded_url, &f)
@@ -42,9 +43,15 @@ func loadFeed(db *scribble.Driver, url string) {
 			}
 		}
 		f.Unread = counter
+		f.Tags = feedConf.Tags
 		feedManager.Append(&f)
 	} else {
-		feedManager.New(url)
+		newFeed, err := feedManager.New(url)
+		if err != nil {
+			return
+		}
+
+		newFeed.Tags = feedConf.Tags
 	}
 }
 

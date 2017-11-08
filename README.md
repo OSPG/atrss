@@ -14,4 +14,6 @@ Copy atrss.yml file to  *~/.config/atrss/atrss.yml*
 # Command line
   - Escape: Close command line
   - q/quit: Close atrss
-
+  - filter: Filter feeds with some criteria
+    - tag: Filter for specific tags
+    - *: Show all feeds

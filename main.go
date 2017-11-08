@@ -20,11 +20,16 @@ type layout struct {
 	BoxHeigh    int `yaml:"items_box_heigh"`
 }
 
+type confFeed struct {
+	Url  string   `yaml:"url"`
+	Tags []string `yaml:"tags"`
+}
+
 type confStruct struct {
-	Browser  string   `yaml:"browser"`
-	Log_file string   `yaml:"log_file"`
-	Feeds    []string `yaml:"feeds"`
-	Layout   layout   `yaml:"layout"`
+	Browser  string     `yaml:"browser"`
+	Log_file string     `yaml:"log_file"`
+	Feeds    []confFeed `yaml:"feeds"`
+	Layout   layout     `yaml:"layout"`
 }
 
 var feedManager feed.Manager
@@ -58,7 +63,7 @@ func eventLoop(s *ui.Screen, cfg confStruct) {
 					if y < cfg.Layout.BoxHeigh-1 && uint32(y) < f.Unread-1 {
 						y++
 					}
-				} else if y < feedManager.Len()-1 {
+				} else if y < feedManager.LenVisible()-1 {
 					y++
 				}
 				s.SetCursor(x, y)
@@ -106,7 +111,7 @@ func eventLoop(s *ui.Screen, cfg confStruct) {
 					OpenURL(cfg.Browser, item.Link)
 				}
 			case ':':
-				if ui.StartCmdLine(s) {
+				if ui.StartCmdLine(s, &feedManager) {
 					return
 				}
 
@@ -119,11 +124,11 @@ func eventLoop(s *ui.Screen, cfg confStruct) {
 }
 
 func loadFeeds(s *ui.Screen, db *scribble.Driver, cfg confStruct) {
-	for _, url := range cfg.Feeds {
-		go func(url string) {
-			loadFeed(db, url)
+	for _, f := range cfg.Feeds {
+		go func(f confFeed) {
+			loadFeed(db, f)
 			s.Redraw(&feedManager)
-		}(url)
+		}(f)
 	}
 }
 

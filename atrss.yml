@@ -1,8 +1,12 @@
 browser: firefox
 log_file: ~/.config/atrss/log
 feeds:
-   - https://news.ycombinator.com/rss
-   - https://rss.mumei.space
+   -
+      url: https://news.ycombinator.com/rss
+      tags:
+         - whatever
+   -
+      url: https://rss.mumei.space
 layout:
    column_width: 30
    items_margin: 5

@@ -126,7 +126,13 @@ func (s *Screen) printStr(x, y int, str string) {
 }
 
 func (s *Screen) showFeeds(feeds []*feed.Feed) {
-	for n, f := range feeds {
+	y := 0
+	for _, f := range feeds {
+		log.Println(f)
+		if !f.Visible {
+			continue
+		}
+
 		unread := strconv.FormatUint(uint64(f.Unread), 10)
 		title := f.Feed.Title
 		str := "(" + unread + ") " + title
@@ -135,7 +141,8 @@ func (s *Screen) showFeeds(feeds []*feed.Feed) {
 		if len(str) > columnWidth {
 			str = str[:columnWidth]
 		}
-		s.printStr(0, n, str)
+		s.printStr(0, y, str)
+		y++
 	}
 }
 
@@ -206,8 +213,8 @@ func (s *Screen) Redraw(feedManager *feed.Manager) {
 	s.printVerticalLine(cw, 0, h+10)
 	s.printHorizontalLine(cw+1, bh, w-cw-1)
 	s.showFeeds(feedManager.Feeds)
-	if s.curX == 0 && s.curY < feedManager.Len() {
-		feed := feedManager.Get(s.curY)
+	if s.curX == 0 && s.curY < feedManager.LenVisible() {
+		feed := feedManager.GetVisibleFeed(s.curY)
 		s.showItems(feed)
 	} else if s.curX == cw+im {
 		feed := feedManager.Get(FeedIdx)
