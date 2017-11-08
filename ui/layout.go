@@ -128,7 +128,6 @@ func (s *Screen) printStr(x, y int, str string) {
 func (s *Screen) showFeeds(feeds []*feed.Feed) {
 	y := 0
 	for _, f := range feeds {
-		log.Println(f)
 		if !f.Visible {
 			continue
 		}

@@ -26,10 +26,11 @@ type confFeed struct {
 }
 
 type confStruct struct {
-	Browser  string     `yaml:"browser"`
-	Log_file string     `yaml:"log_file"`
-	Feeds    []confFeed `yaml:"feeds"`
-	Layout   layout     `yaml:"layout"`
+	Browser       string     `yaml:"browser"`
+	Log_file      string     `yaml:"log_file"`
+	UpdateStartup bool       `yaml:"update_at_startup"`
+	Feeds         []confFeed `yaml:"feeds"`
+	Layout        layout     `yaml:"layout"`
 }
 
 var feedManager feed.Manager
@@ -60,7 +61,10 @@ func eventLoop(s *ui.Screen, cfg confStruct) {
 			case tcell.KeyDown:
 				if x == s.ItemsColumn {
 					f := feedManager.Get(ui.FeedIdx)
-					if y < cfg.Layout.BoxHeigh-1 && uint32(y) < f.Unread-1 {
+					if f.Unread == 0 {
+						y = ui.FeedIdx
+						x = 0
+					} else if y < cfg.Layout.BoxHeigh-1 && uint32(y) < f.Unread-1 {
 						y++
 					}
 				} else if y < feedManager.LenVisible()-1 {
@@ -101,8 +105,10 @@ func eventLoop(s *ui.Screen, cfg confStruct) {
 			case ' ':
 				if x == s.ItemsColumn {
 					f := feedManager.Get(ui.FeedIdx)
-					item := f.GetUnreadItem(y)
-					f.ReadItem(item)
+					if f.Unread != 0 {
+						item := f.GetUnreadItem(y)
+						f.ReadItem(item)
+					}
 				}
 			case 'o', 'O':
 				if x == s.ItemsColumn {
@@ -126,7 +132,7 @@ func eventLoop(s *ui.Screen, cfg confStruct) {
 func loadFeeds(s *ui.Screen, db *scribble.Driver, cfg confStruct) {
 	for _, f := range cfg.Feeds {
 		go func(f confFeed) {
-			loadFeed(db, f)
+			loadFeed(db, f, cfg.UpdateStartup)
 			s.Redraw(&feedManager)
 		}(f)
 	}

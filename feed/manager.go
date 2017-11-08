@@ -124,5 +124,16 @@ func (f *Feed) HaveTag(tag string) bool {
 }
 
 func (f *Feed) Update() {
-	f.Feed.Update()
+	err := f.Feed.Update()
+	if err != nil {
+		log.Println("Can not update feed: ", err)
+		return
+	}
+
+	f.Unread = 0
+	for _, i := range f.Feed.Items {
+		if !i.Read {
+			f.Unread++
+		}
+	}
 }

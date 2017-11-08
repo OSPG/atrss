@@ -16,25 +16,27 @@ func openDB(dir string) *scribble.Driver {
 	return db
 }
 
-func loadFeed(db *scribble.Driver, feedConf confFeed) {
+func loadFeed(db *scribble.Driver, feedConf confFeed, update bool) {
 	url := feedConf.Url
 	f := feed.Feed{}
 	encoded_url := b64.StdEncoding.EncodeToString([]byte(url))
 	err := db.Read("feed", encoded_url, &f)
 
 	if err == nil {
-		updatedFeed, err := feed.Fetch(url)
-		if err == nil {
+		if update {
+			updatedFeed, err := feed.Fetch(url)
+			if err == nil {
 
-			for _, item := range updatedFeed.Feed.Items {
-				if _, ok := f.Feed.ItemMap[item.ID]; !ok {
-					f.Feed.ItemMap[item.ID] = struct{}{}
-					f.Feed.Items = append(f.Feed.Items, item)
+				for _, item := range updatedFeed.Feed.Items {
+					if _, ok := f.Feed.ItemMap[item.ID]; !ok {
+						f.Feed.ItemMap[item.ID] = struct{}{}
+						f.Feed.Items = append(f.Feed.Items, item)
+					}
 				}
-			}
 
-		} else {
-			log.Println("Coud not update the feed: ", err)
+			} else {
+				log.Println("Coud not update the feed: ", err)
+			}
 		}
 		counter := uint32(0)
 		for _, e := range f.Feed.Items {
