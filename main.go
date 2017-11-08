@@ -116,6 +116,9 @@ func eventLoop(s *ui.Screen, cfg confStruct) {
 					item := f.GetUnreadItem(y)
 					OpenURL(cfg.Browser, item.Link)
 				}
+			case 'R':
+				f := feedManager.Get(ui.FeedIdx)
+				f.Update()
 			case ':':
 				if ui.StartCmdLine(s, &feedManager) {
 					return
