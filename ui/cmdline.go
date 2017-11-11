@@ -61,7 +61,7 @@ func handleCommands(s *Screen) bool {
 			case tcell.KeyBackspace, tcell.KeyBackspace2, tcell.KeyDelete:
 				if len(command) > 0 {
 					command = command[:len(command)-1]
-					s.printStr(1, h-1, command)
+					s.printStr(1, h-1, command+" ")
 					s.SetCursor(len(command)+1, h-1)
 					s.screen.Show()
 				}

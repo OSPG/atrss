@@ -96,10 +96,18 @@ func eventLoop(s *ui.Screen, cfg confStruct) {
 			case tcell.KeyEnd:
 				if x == s.ItemsColumn {
 					f := feedManager.Get(ui.FeedIdx)
-					s.SetCursor(s.ItemsColumn, int(f.Unread-1))
+
+					if f.Unread-1 > uint32(y) {
+						y = cfg.Layout.BoxHeigh - 1
+					} else {
+						y = int(f.Unread - 1)
+					}
+
 				} else {
-					s.SetCursor(0, feedManager.Len()-1)
+					x = 0
+					y = feedManager.Len() - 1
 				}
+				s.SetCursor(x, y)
 			}
 			switch ev.Rune() {
 			case ' ':
