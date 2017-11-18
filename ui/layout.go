@@ -107,7 +107,7 @@ func (s *Screen) printHorizontalLine(x, y int, sx int) {
 	s.printRectangle(x, y, sx, 1, '─')
 }
 
-func (s *Screen) printStr(x, y int, str string) {
+func (s *Screen) printStr(x, y int, str string, style tcell.Style) {
 	if x > s.sizeX || y > s.sizeY {
 		log.Printf("WARNING: Invalid positions %d %d. Max: %d %d\n", x, y, s.sizeX, s.sizeY)
 		return
@@ -120,9 +120,15 @@ func (s *Screen) printStr(x, y int, str string) {
 			c = ' '
 			w = 1
 		}
-		s.screen.SetContent(x, y, c, comb, tcell.StyleDefault)
+
+		s.screen.SetContent(x, y, c, comb, style)
+
 		x += w
 	}
+}
+
+func (s *Screen) printStrDef(x, y int, str string) {
+	s.printStr(x, y, str, tcell.StyleDefault)
 }
 
 func (s *Screen) showFeeds(feeds []*feed.Feed) {
@@ -140,7 +146,7 @@ func (s *Screen) showFeeds(feeds []*feed.Feed) {
 		if len(str) > columnWidth {
 			str = str[:columnWidth]
 		}
-		s.printStr(0, y, str)
+		s.printStrDef(0, y, str)
 		y++
 	}
 }
@@ -151,7 +157,7 @@ func (s *Screen) showItems(f *feed.Feed) {
 	y := 0
 	for _, i := range f.Feed.Items {
 		if !i.Read {
-			s.printStr(cw+im, y, i.Title)
+			s.printStrDef(cw+im, y, i.Title)
 			y++
 		}
 
@@ -180,21 +186,21 @@ func (s *Screen) showDescription(content string) {
 			line_off += w
 
 			x_off++
-			s.printStr(itemsColumn, x_off, n_line)
+			s.printStrDef(itemsColumn, x_off, n_line)
 		}
 		if x_off >= h {
 			return
 		}
 		n_line := line[line_off:]
 		x_off++
-		s.printStr(itemsColumn, x_off, n_line)
+		s.printStrDef(itemsColumn, x_off, n_line)
 	}
 }
 
 func (s *Screen) ShowCmdLine() {
 	_, h := s.screen.Size()
 	s.SetCursor(1, h-1)
-	s.printStr(0, h-1, ":")
+	s.printStrDef(0, h-1, ":")
 }
 
 func (s *Screen) PollEvent() interface{} {
