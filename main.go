@@ -39,6 +39,7 @@ func eventLoop(s *ui.Screen, cfg backend.Config) {
 					f.ReadItem(item)
 				}
 			case tcell.KeyDown:
+				_, h := s.GetSize()
 				if x == s.ItemsColumn {
 					f := feedManager.Get(ui.FeedIdx)
 					if f.Unread == 0 {
@@ -47,7 +48,7 @@ func eventLoop(s *ui.Screen, cfg backend.Config) {
 					} else if y < cfg.Layout.BoxHeigh-1 && uint32(y) < f.Unread-1 {
 						y++
 					}
-				} else if y < feedManager.LenVisible()-1 {
+				} else if y < h-1 && y < feedManager.LenVisible()-1 {
 					y++
 				}
 				s.SetCursor(x, y)

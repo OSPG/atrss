@@ -83,6 +83,10 @@ func (s *Screen) GetCursor() (x, y int) {
 	return s.curX, s.curY
 }
 
+func (s *Screen) GetSize() (x, y int) {
+	return s.screen.Size()
+}
+
 // SetCursor sets the cursor to a position
 func (s *Screen) SetCursor(x, y int) {
 	s.curX = x
@@ -169,7 +173,7 @@ func (s *Screen) showItems(f *feed.Feed) {
 }
 
 func (s *Screen) showDescription(content string) {
-	w, h := s.screen.Size()
+	w, h := s.GetSize()
 	cw := s.layout.columnWidth
 	im := s.layout.itemsMargin
 	itemsColumn := cw + im
@@ -198,7 +202,7 @@ func (s *Screen) showDescription(content string) {
 }
 
 func (s *Screen) ShowCmdLine() {
-	_, h := s.screen.Size()
+	_, h := s.GetSize()
 	s.SetCursor(1, h-1)
 	s.printStrDef(0, h-1, ":")
 }
@@ -210,7 +214,7 @@ func (s *Screen) PollEvent() interface{} {
 // Redraw prints all the user interface elements and contents
 func (s *Screen) Redraw(feedManager *feed.Manager) {
 	s.screen.Clear()
-	w, h := s.screen.Size()
+	w, h := s.GetSize()
 	cw := s.layout.columnWidth
 	im := s.layout.itemsMargin
 	bh := s.layout.boxHeigh
