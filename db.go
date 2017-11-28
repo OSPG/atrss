@@ -2,9 +2,11 @@ package main
 
 import (
 	b64 "encoding/base64"
-	"github.com/OSPG/atrss/feed"
 	scribble "github.com/nanobox-io/golang-scribble"
 	"log"
+
+	"github.com/OSPG/atrss/backend"
+	"github.com/OSPG/atrss/feed"
 )
 
 func openDB(dir string) *scribble.Driver {
@@ -16,7 +18,7 @@ func openDB(dir string) *scribble.Driver {
 	return db
 }
 
-func loadFeed(db *scribble.Driver, feedConf confFeed, update bool) {
+func loadFeed(db *scribble.Driver, feedConf backend.ConfFeed, update bool) {
 	url := feedConf.Url
 	f := feed.Feed{}
 	encoded_url := b64.StdEncoding.EncodeToString([]byte(url))

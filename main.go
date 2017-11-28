@@ -3,35 +3,15 @@ package main
 import (
 	"github.com/gdamore/tcell"
 	scribble "github.com/nanobox-io/golang-scribble"
-	"gopkg.in/yaml.v2"
 
+	"github.com/OSPG/atrss/backend"
 	"github.com/OSPG/atrss/feed"
 	"github.com/OSPG/atrss/ui"
-	"io/ioutil"
 	"log"
 	"os"
 )
 
 const CONFIG_DIR = "~/.config/atrss/"
-
-type layout struct {
-	ColumnWidth int `yaml:"column_width"`
-	ItemsMargin int `yaml:"items_margin"`
-	BoxHeigh    int `yaml:"items_box_heigh"`
-}
-
-type confFeed struct {
-	Url  string   `yaml:"url"`
-	Tags []string `yaml:"tags"`
-}
-
-type confStruct struct {
-	Browser       string     `yaml:"browser"`
-	Log_file      string     `yaml:"log_file"`
-	UpdateStartup bool       `yaml:"update_at_startup"`
-	Feeds         []confFeed `yaml:"feeds"`
-	Layout        layout     `yaml:"layout"`
-}
 
 var feedManager feed.Manager
 
@@ -41,7 +21,7 @@ func check(err error) {
 	}
 }
 
-func eventLoop(s *ui.Screen, cfg confStruct) {
+func eventLoop(s *ui.Screen, cfg backend.Config) {
 	for {
 		ev := s.PollEvent()
 
@@ -140,43 +120,16 @@ func eventLoop(s *ui.Screen, cfg confStruct) {
 	}
 }
 
-func loadFeeds(s *ui.Screen, db *scribble.Driver, cfg confStruct) {
+func loadFeeds(s *ui.Screen, db *scribble.Driver, cfg backend.Config) {
 	for _, f := range cfg.Feeds {
-		go func(f confFeed) {
+		go func(f backend.ConfFeed) {
 			loadFeed(db, f, cfg.UpdateStartup)
 			s.Redraw(&feedManager)
 		}(f)
 	}
 }
 
-func loadConfig() confStruct {
-	cfgDir := Expand(CONFIG_DIR)
-	if _, err := os.Stat(cfgDir); os.IsNotExist(err) {
-		err := os.MkdirAll(cfgDir, os.ModePerm)
-		check(err)
-	}
-
-	cfgFile := cfgDir + "atrss.yml"
-	data, err := ioutil.ReadFile(cfgFile)
-	if err != nil {
-		if os.IsNotExist(err) {
-			var conf confStruct
-			d, err := yaml.Marshal(&conf)
-			check(err)
-			err = ioutil.WriteFile(cfgFile, d, os.ModePerm)
-			check(err)
-		} else {
-			check(err)
-		}
-	}
-
-	var conf confStruct
-	err = yaml.UnmarshalStrict([]byte(data), &conf)
-	check(err)
-	return conf
-}
-
-func initLogger(cfg confStruct) {
+func initLogger(cfg backend.Config) {
 	logFile := Expand(cfg.Log_file)
 	file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY, 0666)
 	check(err)
@@ -186,7 +139,7 @@ func initLogger(cfg confStruct) {
 }
 
 func main() {
-	cfg := loadConfig()
+	cfg := backend.LoadConfig(Expand(CONFIG_DIR))
 	initLogger(cfg)
 	db := openDB(CONFIG_DIR)
 	s := ui.InitScreen()
