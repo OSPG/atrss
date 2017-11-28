@@ -140,7 +140,7 @@ func initLogger(cfg backend.Config) {
 
 func main() {
 	cfg := backend.LoadConfig(Expand(CONFIG_DIR))
-	initLogger(cfg)
+	initLogger(*cfg)
 	db := openDB(CONFIG_DIR)
 	s := ui.InitScreen()
 	defer s.DeinitScreen()
@@ -149,7 +149,7 @@ func main() {
 
 	s.SetCursor(0, 0)
 	s.Redraw(&feedManager)
-	loadFeeds(s, db, cfg)
-	eventLoop(s, cfg)
+	loadFeeds(s, db, *cfg)
+	eventLoop(s, *cfg)
 	saveFeeds(db)
 }

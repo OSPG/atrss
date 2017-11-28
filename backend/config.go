@@ -27,8 +27,12 @@ type Config struct {
 	Layout        layout     `yaml:"layout"`
 }
 
-// confDir should be already expanded
-func LoadConfig(cfgDir string) Config {
+var configFile string
+
+var conf Config
+
+// confDir must be already expanded
+func LoadConfig(cfgDir string) *Config {
 	if _, err := os.Stat(cfgDir); os.IsNotExist(err) {
 		err := os.MkdirAll(cfgDir, os.ModePerm)
 		if err != nil {
@@ -36,32 +40,43 @@ func LoadConfig(cfgDir string) Config {
 		}
 	}
 
-	cfgFile := cfgDir + "atrss.yml"
-	data, err := ioutil.ReadFile(cfgFile)
+	configFile = cfgDir + "atrss.yml"
+	data, err := ioutil.ReadFile(configFile)
 	if err != nil {
 		if os.IsNotExist(err) {
 			var conf Config
-			d, err := yaml.Marshal(&conf)
-			if err != nil {
-				log.Fatalln("Can not create default config: ", err)
-			}
-
-			err = ioutil.WriteFile(cfgFile, d, os.ModePerm)
-			if err != nil {
-				log.Fatalln("Can not create default config file: ", err)
-			}
-
+			WriteConfig(conf)
 		} else {
 			log.Fatalln("Unknown error when reading config: ", err)
 		}
 	}
 
-	var conf Config
 	err = yaml.UnmarshalStrict([]byte(data), &conf)
 	if err != nil {
 		log.Fatalln("Can not get config: ", err)
 	}
 
-	return conf
+	return &conf
+}
 
+func WriteConfig(c Config) {
+	if configFile == "" {
+		log.Println("Config must be loaded before any write")
+		return
+	}
+
+	d, err := yaml.Marshal(&c)
+	if err != nil {
+		log.Fatalln("Can not create default config: ", err)
+	}
+
+	err = ioutil.WriteFile(configFile, d, os.ModePerm)
+	if err != nil {
+		log.Fatalln("Can not create default config file: ", err)
+	}
+	conf = c
+}
+
+func GetConfig() *Config {
+	return &conf
 }

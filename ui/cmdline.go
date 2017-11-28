@@ -1,10 +1,13 @@
 package ui
 
 import (
-	"github.com/OSPG/atrss/feed"
-	"github.com/gdamore/tcell"
-
 	"strings"
+
+	"github.com/gdamore/tcell"
+	"github.com/gilliek/go-opml/opml"
+
+	"github.com/OSPG/atrss/backend"
+	"github.com/OSPG/atrss/feed"
 )
 
 var feedManager *feed.Manager
@@ -46,6 +49,28 @@ func showError(msg string) {
 	}
 }
 
+func appendFeeds(cfg *backend.Config, outlines []opml.Outline) {
+	for _, v := range outlines {
+		if len(v.Outlines) > 0 {
+			appendFeeds(cfg, v.Outlines)
+		} else {
+			cfg.Feeds = append(cfg.Feeds, backend.ConfFeed{Url: v.XMLURL})
+		}
+	}
+}
+
+func importOPML(path string) {
+	cfg := backend.GetConfig()
+	doc, err := opml.NewOPMLFromFile(path)
+	if err != nil {
+		showError("Can not open given path")
+		return
+	}
+
+	appendFeeds(cfg, doc.Outlines())
+	backend.WriteConfig(*cfg)
+}
+
 func parseFilterCmd(cmd_args []string) {
 	switch cmd_args[0] {
 	case "tag":
@@ -65,6 +90,8 @@ func parseCmd(cmd string) bool {
 		return true
 	case "filter":
 		parseFilterCmd(cmd_args[1:])
+	case "import":
+		importOPML(cmd_args[1])
 	default:
 		showError("Command not found")
 	}
