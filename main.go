@@ -86,7 +86,13 @@ func eventLoop(s *ui.Screen, cfg backend.Config) {
 
 				} else {
 					x = 0
-					y = feedManager.Len() - 1
+					elements := feedManager.Len()
+					if elements > y {
+						_, h := s.GetSize()
+						y = h - 1
+					} else {
+						y = elements - 1
+					}
 				}
 				s.SetCursor(x, y)
 			}
