@@ -19,3 +19,4 @@ Copy atrss.yml file to  *~/.config/atrss/atrss.yml*
   - filter: Filter feeds with some criteria
     - tag: Filter for specific tags
     - *: Show all feeds
+  - import: Import and opml file
