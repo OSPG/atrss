@@ -116,7 +116,12 @@ func (s *Screen) printStr(x, y int, str string, style tcell.Style) {
 		log.Printf("WARNING: Invalid positions %d %d. Max: %d %d\n", x, y, s.sizeX, s.sizeY)
 		return
 	}
+
 	for _, c := range str {
+		if c < 32 {
+			continue
+		}
+
 		var comb []rune
 		w := runewidth.RuneWidth(c)
 		if w == 0 {
