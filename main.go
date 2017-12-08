@@ -78,7 +78,7 @@ func eventLoop(s *ui.Screen, cfg backend.Config) {
 				if x == s.ItemsColumn {
 					f := feedManager.Get(ui.FeedIdx)
 
-					if f.Unread-1 > uint32(y) {
+					if f.Unread-1 > uint32(cfg.Layout.BoxHeigh) {
 						y = cfg.Layout.BoxHeigh - 1
 					} else {
 						y = int(f.Unread - 1)
