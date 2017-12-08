@@ -123,10 +123,12 @@ func eventLoop(s *ui.Screen, cfg backend.Config) {
 
 func loadFeeds(s *ui.Screen, db *scribble.Driver, cfg backend.Config) {
 	for _, f := range cfg.Feeds {
-		go func(f backend.ConfFeed) {
-			loadFeed(db, f, cfg.UpdateStartup)
-			s.Redraw(&feedManager)
-		}(f)
+		//go func(f backend.ConfFeed) {
+		//	loadFeed(db, f, cfg.UpdateStartup)
+		//	s.Redraw(&feedManager)
+		//}(f)
+		loadFeed(db, f, cfg.UpdateStartup)
+		s.Redraw(&feedManager)
 	}
 }
 
