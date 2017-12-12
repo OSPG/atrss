@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"time"
 
 	"gopkg.in/yaml.v2"
 )
@@ -20,11 +21,12 @@ type ConfFeed struct {
 }
 
 type Config struct {
-	Browser       string     `yaml:"browser"`
-	Log_file      string     `yaml:"log_file"`
-	UpdateStartup bool       `yaml:"update_at_startup"`
-	Feeds         []ConfFeed `yaml:"feeds"`
-	Layout        layout     `yaml:"layout"`
+	Browser        string        `yaml:"browser"`
+	Log_file       string        `yaml:"log_file"`
+	UpdateStartup  bool          `yaml:"update_at_startup"`
+	UpdateInterval time.Duration `yaml:"update_interval"`
+	Feeds          []ConfFeed    `yaml:"feeds"`
+	Layout         layout        `yaml:"layout"`
 }
 
 var configFile string

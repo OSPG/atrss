@@ -1,5 +1,7 @@
 browser: firefox
 log_file: ~/.config/atrss/log
+update_at_startup: false
+update_interval: 5
 feeds:
    -
       url: https://news.ycombinator.com/rss

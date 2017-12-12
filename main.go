@@ -8,6 +8,7 @@ import (
 	"github.com/OSPG/atrss/ui"
 	"log"
 	"os"
+	"time"
 )
 
 const CONFIG_DIR = "~/.config/atrss/"
@@ -38,6 +39,15 @@ func initLogger(cfg backend.Config) {
 	log.Println("Logger initalized")
 }
 
+func updateFeedsLoop(s *ui.Screen, timer *time.Timer) {
+	for {
+		<-timer.C
+		log.Println("Updateing feeds")
+		feedManager.Update()
+		s.Redraw(&feedManager)
+	}
+}
+
 func main() {
 	cfg := backend.LoadConfig(Expand(CONFIG_DIR))
 	initLogger(*cfg)
@@ -50,6 +60,14 @@ func main() {
 	s.SetCursor(0, 0)
 	s.Redraw(&feedManager)
 	loadFeeds(s, db, *cfg)
+
+	if cfg.UpdateInterval != 0 {
+		timer := time.NewTimer(time.Minute * cfg.UpdateInterval)
+		defer timer.Stop()
+		go updateFeedsLoop(s, timer)
+	}
+
 	ui.StartEventLoop(s, &feedManager, *cfg)
+
 	saveFeeds(db)
 }
