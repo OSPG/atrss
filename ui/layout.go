@@ -98,7 +98,7 @@ func (s *Screen) printRectangle(x, y int, sx, sy int, c rune) {
 	for row := 0; row < sy; row++ {
 		for col := 0; col < sx; col++ {
 			style := tcell.StyleDefault.Foreground(tcell.ColorRed)
-			s.screen.SetCell(x+col, y+row, style, c)
+			s.screen.SetContent(x+col, y+row, c, nil, style)
 		}
 	}
 }
