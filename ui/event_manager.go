@@ -92,10 +92,20 @@ func StartEventLoop(s *Screen, feedManager *feed.Manager, cfg backend.Config) {
 					}
 				}
 				s.SetCursor(x, y)
+			case tcell.KeyCtrlSpace:
+				for i := 0; i < feedManager.Len(); i++ {
+					f := feedManager.Get(i)
+					f.Unread = 0
+					f.Read += f.Unread
+				}
 			}
 			switch ev.Rune() {
 			case ' ':
-				if x == s.ItemsColumn {
+				if x == 0 {
+					f := feedManager.Get(y)
+					f.Unread = 0
+					f.Read += f.Unread
+				} else if x == s.ItemsColumn {
 					f := feedManager.Get(FeedIdx)
 					if f.Unread != 0 {
 						item := f.GetUnreadItem(y)

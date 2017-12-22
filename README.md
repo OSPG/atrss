@@ -8,7 +8,8 @@ Copy atrss.yml file to  *~/.config/atrss/atrss.yml*
   - Ctrl-O: Open item and mark it as readed
   - Ctrl-R: Update all feeds
   - Down, Up, Right, Left: Move cursor
-  - Space: Mark item as readed
+  - Space: Mark item/feed as readed 
+  - Ctrl-Space: Mark all feeds as read
   - o/O: Open item without marking it as readed
   - R: Update the current feed
   - ":": Open command line
