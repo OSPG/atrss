@@ -43,7 +43,7 @@ func getField(i interface{}, field string) interface{} {
 	return v.Field(count).Interface()
 }
 
-// InitScreen initalize the screen
+// InitScreen initialize the screen
 func InitScreen() *Screen {
 	tcell.SetEncodingFallback(tcell.EncodingFallbackASCII)
 	s, err := tcell.NewScreen()
@@ -53,7 +53,7 @@ func InitScreen() *Screen {
 
 	err = s.Init()
 	if err != nil {
-		log.Fatalln("Could not initalize screen: ", err)
+		log.Fatalln("Could not initialize screen: ", err)
 	}
 	x, y := s.Size()
 

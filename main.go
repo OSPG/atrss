@@ -36,7 +36,7 @@ func initLogger(cfg backend.Config) {
 	check(err)
 
 	log.SetOutput(file)
-	log.Println("Logger initalized")
+	log.Println("Logger initialized")
 }
 
 func updateFeedsLoop(s *ui.Screen, timer *time.Timer) {
