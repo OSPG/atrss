@@ -64,7 +64,7 @@ func saveFeeds(db *scribble.Driver) {
 		encoded_url := b64.StdEncoding.EncodeToString([]byte(f.Feed.UpdateURL))
 		err := db.Write("feed", encoded_url, f)
 		if err != nil {
-			log.Fatalln(err)
+			log.Println(err)
 		}
 	}
 }
